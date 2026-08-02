@@ -428,12 +428,51 @@ Prisma schema 位于各应用的 `prisma/schema.prisma`。当前核心模型包�
 
 ### 代码质量与提交链路
 
-- TypeScript：各 workspace 提供 `typecheck`，根目录通过 Turbo 聚合执行。
+- TypeScript：各 workspace 提供 `typecheck`，根目录脚本会先构建 `ai-engine`，再按 `ai-engine`、`workflow`、`webapp`、`api-server` 的顺序执行类型检查。
 - ESLint：根目录 `eslint.config.js` 统一规则。
 - Prettier：`.prettierrc` 定义格式化风格，`.prettierignore` 排除构建产物和不适合格式化的文件。
 - CSpell：`cspell.json` 和 `.cspell/custom-words.txt` 维护项目词库，避免技术名词误报。
 - Husky + lint-staged：提交前执行 staged 文件检查、拼写检查和类型检查。
 - Turbo：`turbo.json` 管理 build、typecheck 等任务依赖和缓存。
+
+## 后端工程化
+
+### 服务边界
+
+后端分为主平台 BFF 和对外 API 两类入口。`apps/workflow/app/api` 使用 Next.js Route Handlers，为主控台提供登录注册、应用管理、工作流保存、测试运行、知识库和监控等内部接口。`apps/api-server` 使用 NestJS，为第三方系统提供发布应用调用入口，重点承担 API Key 鉴权、发布快照读取、执行引擎调用和外部调用日志记录。
+
+两类入口共享 PostgreSQL、Prisma schema 和 `packages/ai-engine`，但职责边界不同：主平台 API 面向已登录用户和编辑态数据，`api-server` 面向外部系统和发布态快照。
+
+### API 设计与鉴权
+
+- 主平台接口统一放在 `apps/workflow/app/api`，通过 `lib/auth.ts` 获取当前登录用户，并在具体 Route Handler 中校验资源归属。
+- 对外 API 放在 `apps/api-server/src/modules/workflow`，入口为 `POST /api/v1/apps/run`。
+- 外部调用通过 `ApiKeyGuard` 校验 `Authorization: Bearer <API_KEY>`，只允许访问已发布且 API Key 有效的应用。
+- 主平台 API 使用 `lib/api-response.ts` 返回统一成功/错误结构；NestJS 服务使用全局 `TransformInterceptor` 和 `HttpExceptionFilter` 统一响应和异常处理。
+- 长任务或需要过程反馈的执行链路使用 SSE 返回节点状态、日志、错误和最终结果。
+
+### 数据访问与持久化
+
+- Prisma 是主要数据访问层，schema 位于各应用的 `prisma/schema.prisma`，数据库结构以 `apps/workflow/prisma/migrations` 为迁移来源。
+- 业务数据存 PostgreSQL，包括用户、应用、工作流、发布快照、API Key、执行记录、知识库和文档元数据。
+- 向量数据存 Qdrant，包含文档切片向量、payload 和检索索引；PostgreSQL 只保存知识库配置、文档元数据和处理状态。
+- 编辑态工作流写入 `Workflow`，发布时复制为 `PublishedApp` 快照，外部调用只读取发布快照，避免草稿改动影响线上。
+- 平台测试写入 `WorkflowExecution`，外部 API 调用写入 `AppExecution`，便于监控、审计和问题排查。
+
+### 配置与安全
+
+- 数据库、Qdrant、Ollama、SMTP、JWT Secret、服务端口等均通过环境变量注入，本地示例见“快速开始”章节。
+- `.env*` 被 `.gitignore` 排除，不应提交真实密钥、SMTP 授权码、JWT Secret 或生产数据库连接串。
+- API Key 只在创建时返回完整值，后续展示使用 `keyPrefix`，服务端通过完整 key 做校验。
+- 删除用户、应用、工作流、发布版本、知识库等资源时依赖 Prisma relation 和数据库外键规则控制级联边界，详细关系见 [`docs/database.md`](./docs/database.md)。
+
+### 后端质量约定
+
+- 新增业务接口时优先补齐输入校验、资源归属校验、错误码和执行记录。
+- 工作流执行、节点行为和 RAG 检索能力优先放在 `packages/ai-engine`，避免在 Route Handler 或 Controller 中复制执行逻辑。
+- NestJS 模块按 Controller、Service、DTO、Guard、Prisma Service 分层；主平台 Route Handler 中复杂逻辑应下沉到 `lib/services/*`。
+- 修改 Prisma schema 后需要同步迁移、重新生成 Prisma Client，并更新 [`docs/database.md`](./docs/database.md)。
+- 提交前执行 `pnpm lint`、`pnpm spellcheck`、`pnpm typecheck`，避免格式、拼写和类型问题进入主分支。
 
 ## 工程规范
 
