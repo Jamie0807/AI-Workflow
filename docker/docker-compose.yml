@@ -1,0 +1,39 @@
+services:
+    ai-workflow-postgresql:
+        image: mirror.gcr.io/library/postgres:18
+        container_name: ai-workflow-postgresql
+        ports:
+            - '5433:5432'
+        environment:
+            - POSTGRES_USER=postgres
+            - POSTGRES_DB=postgres
+            - POSTGRES_PASSWORD=xiaoer
+            # - POSTGRESQL_DATABASE=postgres
+        volumes:
+            - ./postgresql_data:/var/lib/postgresql
+        # 日志控制，很重要防止服务器被日志文件爆满
+        logging:
+            driver: 'json-file'
+            options:
+                max-size: '100m'
+                max-file: '3'
+
+    # Qdrant 向量数据库
+    ai-workflow-qdrant:
+        image: docker.m.daocloud.io/qdrant/qdrant:latest
+        container_name: ai-workflow-qdrant
+        ports:
+            - '6333:6333' # REST API
+            - '6334:6334' # gRPC
+        volumes:
+            - ./qdrant_storage:/qdrant/storage
+        logging:
+            driver: 'json-file'
+            options:
+                max-size: '100m'
+                max-file: '3'
+
+networks:
+    default:
+        name: ai-workflow-network
+        driver: bridge

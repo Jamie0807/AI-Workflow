@@ -1,0 +1,75 @@
+{
+    "name": "ai-workflow",
+    "version": "1.0.0",
+    "description": "",
+    "main": "index.js",
+    "packageManager": "pnpm@9.12.3",
+    "scripts": {
+        "build:watch": "turbo build:watch",
+        "build": "turbo build",
+        "dev": "turbo dev",
+        "docker:start": "docker compose -f docker/docker-compose.yml -p ai-workflow up -d",
+        "docker:top": "docker compose -f docker/docker-compose.yml -p ai-workflow down",
+        "clean": "run-s clean:build clean:caches",
+        "clean:build": "pnpm --filter @ai-workflow/* clean",
+        "clean:caches": " rimraf .turbo/cache **/*/.turbo",
+        "clean:deps": "rimraf node_modules **/*/node_modules",
+        "clean:all": "run-s clean:build clean:caches clean:deps",
+        "lint": "eslint",
+        "lint:staged": "lint-staged",
+        "spellcheck": "cspell lint --dot --gitignore --color --cache --show-suggestions \"(packages|apps)/**/*.@(html|js|cjs|mjs|ts|tsx|css|scss|md)\"",
+        "typecheck": "pnpm --filter @ai-workflow/ai-engine build && pnpm --filter @ai-workflow/ai-engine typecheck && pnpm --filter @ai-workflow/workflow typecheck && pnpm --filter @ai-workflow/webapp typecheck && pnpm --filter @ai-workflow/api-server typecheck",
+        "commit": "git-cz",
+        "prepare": "husky"
+    },
+    "keywords": [],
+    "author": "Jamie",
+    "license": "UNLICENSED",
+    "config": {
+        "commitizen": {
+            "path": "node_modules/cz-git"
+        }
+    },
+    "lint-staged": {
+        "*.{md,json}": [
+            "prettier --cache --write --no-error-on-unmatched-pattern"
+        ],
+        "*.{css,less}": [
+            "prettier --cache --write"
+        ],
+        "*.{js,jsx}": [
+            "eslint --fix",
+            "prettier --cache --write"
+        ],
+        "*.{ts,tsx}": [
+            "eslint --fix",
+            "prettier --cache --parser=typescript --write"
+        ]
+    },
+    "devDependencies": {
+        "@types/node": "22.9.0",
+        "eslint": "9.39.1",
+        "@eslint/js": "9.39.1",
+        "eslint-config-next": "16.0.5",
+        "typescript-eslint": "8.48.0",
+        "eslint-plugin-react-refresh": "0.4.24",
+        "eslint-plugin-react-hooks": "^7.0.1",
+        "globals": "16.5.0",
+        "typescript": "5.9.3",
+        "eslint-plugin-prettier": "5.5.4",
+        "eslint-plugin-simple-import-sort": "12.1.1",
+        "cspell": "9.3.2",
+        "lint-staged": "16.2.7",
+        "prettier": "3.7.3",
+        "@commitlint/cli": "20.1.0",
+        "@commitlint/config-conventional": "20.0.0",
+        "commitizen": "4.3.1",
+        "fast-glob": "3.3.3",
+        "husky": "9.1.7",
+        "cz-git": "1.10.1",
+        "tsup": "8.3.5",
+        "turbo": "2.2.3",
+        "rimraf": "6.0.1",
+        "npm-run-all2": "7.0.1"
+    }
+}

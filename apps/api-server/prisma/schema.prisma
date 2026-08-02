@@ -1,0 +1,239 @@
+generator client {
+  provider = "prisma-client"
+  output = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  password      String
+  name          String?
+  avatar        String?
+  emailVerified DateTime?
+  verifyToken   String?   @unique
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  // 关联应用
+  apps          App[]
+
+  @@map("users")
+}
+
+model App {
+  id          String      @id @default(cuid())
+  name        String
+  description String?
+  icon        String      @default("automation")
+  type        AppType     @default(WORKFLOW)
+  tags        String[]    @default([])
+  config      Json?       // 应用配置（工作流定义等）
+  version     Int         @default(1)
+  isPublished Boolean     @default(false)
+  isDeleted   Boolean     @default(false)
+
+  // 发布相关字段 - 指向当前激活的发布版本
+  activePublishedId  String?   // 当前激活的发布版本 ID
+
+  // 关联 API Keys（一个应用可以有多个 API Key）
+  apiKeys     ApiKey[]
+
+  // 关联用户
+  userId      String
+  user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // 关联工作流（一个应用可以有多个工作流版本，用于编辑）
+  workflows   Workflow[]
+
+  // 关联发布版本（一个应用可以有多个发布版本）
+  publishedVersions  PublishedApp[]
+
+  // 关联当前激活的发布版本
+  activePublished    PublishedApp? @relation("ActivePublished", fields: [activePublishedId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  // 关联执行历史（测试执行）
+  executions  WorkflowExecution[]
+
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+  publishedAt DateTime?
+
+  @@index([userId])
+  @@index([type])
+  @@map("apps")
+}
+
+model Workflow {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+
+  // 工作流定义（节点、边、配置）
+  nodes       Json     // 节点数据
+  edges       Json     // 边数据
+
+  // 版本控制
+  version     Int      @default(1)
+
+  // 关联应用
+  appId       String
+  app         App      @relation(fields: [appId], references: [id], onDelete: Cascade)
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([appId])
+  @@index([version])
+  @@map("workflows")
+}
+
+// 发布的应用版本（工作流快照）
+model PublishedApp {
+  id           String              @id @default(cuid())
+  version      Int                 // 发布版本号（自增）
+  name         String              // 发布时的应用名称快照
+  description  String?             // 发布时的描述快照
+
+  // 工作流定义快照（发布时复制，独立于 Workflow）
+  nodes        Json                // 节点数据快照
+  edges        Json                // 边数据快照
+
+  // 关联应用
+  appId        String
+  app          App                 @relation(fields: [appId], references: [id], onDelete: Cascade)
+
+  // 反向关联（被 App.activePublished 引用）
+  activeApps   App[]               @relation("ActivePublished")
+
+  // 关联 API 执行历史
+  executions   AppExecution[]
+
+  // 发布信息
+  publishedAt  DateTime            @default(now())
+  publishedBy  String?             // 发布者用户 ID
+
+  @@unique([appId, version])       // 同一应用的版本号唯一
+  @@index([appId])
+  @@index([version])
+  @@map("published_apps")
+}
+
+// 工作流测试执行历史记录（编辑器中的测试运行）
+model WorkflowExecution {
+  id           String              @id @default(cuid())
+  executionId  String              @unique // 执行唯一标识
+
+  // 执行状态
+  status       ExecutionStatus     @default(RUNNING)
+
+  // 输入输出
+  inputs       Json?               // 输入参数
+  outputs      Json?               // 输出结果
+  error        String?             // 错误信息
+
+  // 执行统计
+  duration     Int?                // 执行耗时(毫秒)
+  totalTokens  Int                 @default(0) // Token消耗
+
+  // 节点执行追踪
+  nodeTraces   Json?               // 节点执行详情
+
+  // 关联应用
+  appId        String
+  app          App                 @relation(fields: [appId], references: [id], onDelete: Cascade)
+
+  // 执行时间
+  startedAt    DateTime            @default(now())
+  completedAt  DateTime?
+
+  @@index([appId])
+  @@index([status])
+  @@index([startedAt])
+  @@map("workflow_executions")
+}
+
+enum ExecutionStatus {
+  RUNNING
+  SUCCESS
+  ERROR
+}
+
+enum AppType {
+  WORKFLOW
+  CHATBOT
+  AGENT
+}
+
+// API 访问密钥
+model ApiKey {
+  id          String    @id @default(cuid())
+  name        String                          // Key 名称（便于识别）
+  key         String    @unique               // 实际的 API Key 值
+  keyPrefix   String                          // Key 前缀（用于显示 sk-xxx...xxx）
+
+  // 状态和权限
+  isActive    Boolean   @default(true)        // 是否启用
+  expiresAt   DateTime?                       // 过期时间（null 表示永不过期）
+
+  // 使用统计
+  lastUsedAt  DateTime?                       // 最后使用时间
+  usageCount  Int       @default(0)           // 使用次数
+
+  // 关联应用
+  appId       String
+  app         App       @relation(fields: [appId], references: [id], onDelete: Cascade)
+
+  // 关联执行记录
+  executions  AppExecution[]
+
+  // 时间戳
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([appId])
+  @@index([key])
+  @@map("api_keys")
+}
+
+// 发布应用执行历史记录（通过 API 访问）
+model AppExecution {
+  id           String              @id @default(cuid())
+  executionId  String              @unique // 执行唯一标识
+
+  // 执行状态
+  status       ExecutionStatus     @default(RUNNING)
+
+  // 输入输出
+  inputs       Json?               // 输入参数
+  outputs      Json?               // 输出结果
+  error        String?             // 错误信息
+
+  // 执行统计
+  duration     Int?                // 执行耗时(毫秒)
+  totalTokens  Int                 @default(0) // Token消耗
+
+  // 节点执行追踪
+  nodeTraces   Json?               // 节点执行详情
+
+  // 关联发布版本（核心关联）
+  publishedAppId  String
+  publishedApp    PublishedApp     @relation(fields: [publishedAppId], references: [id], onDelete: Cascade)
+
+  // 调用的 API Key（可追踪是哪个 Key 发起的）
+  apiKeyId     String?
+  apiKey       ApiKey?             @relation(fields: [apiKeyId], references: [id], onDelete: SetNull)
+
+  // 执行时间
+  startedAt    DateTime            @default(now())
+  completedAt  DateTime?
+
+  @@index([publishedAppId])
+  @@index([apiKeyId])
+  @@index([status])
+  @@index([startedAt])
+  @@map("app_executions")
+}
