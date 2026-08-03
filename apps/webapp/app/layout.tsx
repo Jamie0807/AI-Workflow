@@ -6,6 +6,10 @@ import { Toaster } from 'sonner'
 export const metadata: Metadata = {
     title: 'AI 应用 - WebApp',
     description: '工作流演示应用',
+    icons: {
+        icon: '/icon.svg',
+        shortcut: '/icon.svg',
+    },
 }
 
 export default function RootLayout({
