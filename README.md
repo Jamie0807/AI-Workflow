@@ -328,6 +328,7 @@ pnpm --filter @ai-workflow/ai-engine test
 # Code quality
 pnpm lint
 pnpm spellcheck
+pnpm commit
 
 # Infrastructure
 pnpm docker:start
@@ -435,6 +436,7 @@ Execution behavior should live in `ai-engine` first, so platform test runs, WebA
 - Prettier: `.prettierrc` defines formatting style; `.prettierignore` excludes build artifacts and files that should not be formatted.
 - CSpell: `cspell.json` and `.cspell/custom-words.txt` maintain project vocabulary and reduce false positives.
 - Husky + lint-staged: pre-commit checks staged files, spelling, and types.
+- Commit command: use `pnpm commit` to create commits through Commitizen and Commitlint.
 - Turbo: `turbo.json` manages task dependencies and cache behavior for build and typecheck.
 
 ## Backend Engineering
@@ -491,6 +493,7 @@ Recommended pre-commit checks:
 pnpm lint
 pnpm spellcheck
 pnpm typecheck
+pnpm commit
 ```
 
 ## Maintenance Notes

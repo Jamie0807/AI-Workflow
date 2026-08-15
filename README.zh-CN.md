@@ -328,6 +328,7 @@ pnpm --filter @ai-workflow/ai-engine test
 # 代码质量
 pnpm lint
 pnpm spellcheck
+pnpm commit
 
 # 基础设施
 pnpm docker:start
@@ -435,6 +436,7 @@ Prisma schema 位于各应用的 `prisma/schema.prisma`。当前核心模型包�
 - Prettier：`.prettierrc` 定义格式化风格，`.prettierignore` 排除构建产物和不适合格式化的文件。
 - CSpell：`cspell.json` 和 `.cspell/custom-words.txt` 维护项目词库，避免技术名词误报。
 - Husky + lint-staged：提交前执行 staged 文件检查、拼写检查和类型检查。
+- 提交命令：使用 `pnpm commit` 通过 Commitizen 和 Commitlint 创建提交。
 - Turbo：`turbo.json` 管理 build、typecheck 等任务依赖和缓存。
 
 ## 后端工程化
@@ -491,6 +493,7 @@ Prisma schema 位于各应用的 `prisma/schema.prisma`。当前核心模型包�
 pnpm lint
 pnpm spellcheck
 pnpm typecheck
+pnpm commit
 ```
 
 ## 维护说明
