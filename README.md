@@ -1,91 +1,93 @@
 # AI Workflow
 
-AI Workflow 是一个面向实际业务落地的 AI 工作流开发平台。它提供可视化编排、测试运行、版本发布、API 调用、知识库检索和执行监控能力，用于把 LLM、RAG、HTTP 请求、条件分支和结构化输出组合成可维护、可复用、可集成的自动化流程。
+English | [简体中文](./README.zh-CN.md)
 
-代码按长期演进的产品项目组织，采用 Monorepo 管理多个应用和共享执行引擎，目标是支撑真实的开发、部署和迭代。
+AI Workflow is an AI workflow development platform built for real product development. It provides visual orchestration, test runs, release snapshots, API invocation, knowledge-base retrieval, and execution monitoring, so teams can compose LLM, RAG, HTTP request, conditional branch, and structured output capabilities into maintainable and reusable automation flows.
 
-## 核心能力
+The repository is organized as a long-lived product codebase. It uses a Monorepo to manage multiple applications and a shared workflow execution engine, with the goal of supporting real development, deployment, and iteration.
 
-- **可视化工作流编排**：基于 `@xyflow/react` 提供节点拖拽、连线、配置和测试运行。
-- **统一执行引擎**：`packages/ai-engine` 负责 DAG 校验、拓扑排序、条件分支、节点执行和日志追踪。
-- **RAG 知识库**：支持文档切片、Ollama Embedding、Qdrant 向量检索、全文检索和混合检索。
-- **应用发布链路**：支持编辑态工作流、发布快照、API Key、执行历史和调用统计。
-- **多入口运行**：平台内测试、轻量 WebApp 访问、NestJS 对外 API 都复用同一套执行内核。
+## Core Capabilities
 
-## 技术栈
+- **Visual workflow orchestration**: node dragging, connection, configuration, and test execution powered by `@xyflow/react`.
+- **Shared execution engine**: `packages/ai-engine` owns DAG validation, topological sorting, conditional branching, node execution, and execution tracing.
+- **RAG knowledge base**: document chunking, Ollama embeddings, Qdrant vector search, full-text search, and hybrid retrieval.
+- **Application release flow**: draft workflows, published snapshots, API keys, execution history, and usage statistics.
+- **Multiple runtime entries**: platform test runs, lightweight WebApp access, and the NestJS external API reuse the same execution core.
 
-| 层级       | 技术                                                            |
-| ---------- | --------------------------------------------------------------- |
-| 工程组织   | pnpm workspace、Turborepo、TypeScript                           |
-| 平台应用   | Next.js 16、React 19、App Router、Tailwind CSS 4                |
-| 工作流编辑 | `@xyflow/react`、`react-hook-form`、Tiptap、shadcn/ui 风格组件  |
-| 对外 API   | NestJS 11、Guard、Interceptor、Filter、class-validator          |
-| 执行引擎   | `WorkflowEngine`、`GraphBuilder`、`NodeRegistry`、节点 Executor |
-| AI / RAG   | Ollama、`@langchain/ollama`、Qdrant                             |
-| 数据层     | PostgreSQL、Prisma 7                                            |
-| 工程质量   | ESLint 9、Prettier、CSpell、Commitlint、Husky、lint-staged      |
+## Tech Stack
 
-## 项目结构
+| Layer               | Technologies                                                           |
+| ------------------- | ---------------------------------------------------------------------- |
+| Workspace           | pnpm workspace, Turborepo, TypeScript                                  |
+| Platform app        | Next.js 16, React 19, App Router, Tailwind CSS 4                       |
+| Workflow editor     | `@xyflow/react`, `react-hook-form`, Tiptap, shadcn/ui-style components |
+| External API        | NestJS 11, Guard, Interceptor, Filter, class-validator                 |
+| Execution engine    | `WorkflowEngine`, `GraphBuilder`, `NodeRegistry`, node executors       |
+| AI / RAG            | Ollama, `@langchain/ollama`, Qdrant                                    |
+| Data layer          | PostgreSQL, Prisma 7                                                   |
+| Engineering quality | ESLint 9, Prettier, CSpell, Commitlint, Husky, lint-staged             |
+
+## Project Structure
 
 ```text
 ai-workflow/
-├── apps/                         # 可独立运行的应用
-│   ├── workflow/                 # 主平台：登录、应用管理、工作流编辑、知识库、监控、BFF API
-│   │   ├── app/                  # Next.js App Router 页面、布局、Route Handlers、Middleware
-│   │   ├── components/           # 业务组件和 shadcn/ui 风格基础组件
-│   │   ├── hooks/                # 前端通用 hooks
-│   │   ├── lib/                  # Auth、Prisma、服务封装、类型和工具函数
-│   │   └── prisma/               # 主平台数据库 schema 和迁移
-│   ├── api-server/               # NestJS 对外 API：API Key 鉴权、发布应用执行、调用日志
-│   │   ├── src/                  # Nest 模块、Controller、Service、Guard、Filter
-│   │   └── prisma/               # API 服务使用的 Prisma schema
-│   └── webapp/                   # 轻量访问入口：面向访问者运行已发布工作流
-│       ├── app/                  # Next.js 页面入口
-│       ├── components/           # 运行面板和结果展示组件
-│       ├── lib/                  # Prisma、类型、工具函数
-│       └── prisma/               # WebApp 使用的 Prisma schema
-├── packages/                     # 多应用共享包
-│   └── ai-engine/                # 工作流执行引擎、节点协议、执行器、RAG 检索能力
-│       ├── src/core/             # WorkflowEngine、GraphBuilder、ExecutionContext
-│       ├── src/nodes/            # 节点注册、节点执行器
-│       ├── src/validators/       # 工作流和节点配置校验
-│       ├── src/knowledge/        # 文档切片、向量化、检索器
-│       └── src/types/            # 工作流、节点、执行结果等共享类型
-├── docker/                       # 本地基础设施编排
-│   └── docker-compose.yml        # PostgreSQL、Qdrant
-├── docs/                         # 项目文档
-│   └── database.md               # 数据表、关系、级联规则、向量库边界
+├── apps/                         # Independently runnable applications
+│   ├── workflow/                 # Main platform: auth, apps, editor, knowledge base, monitoring, BFF API
+│   │   ├── app/                  # Next.js App Router pages, layouts, route handlers, middleware
+│   │   ├── components/           # Business components and shadcn/ui-style primitives
+│   │   ├── hooks/                # Shared frontend hooks
+│   │   ├── lib/                  # Auth, Prisma, services, types, utilities
+│   │   └── prisma/               # Main platform Prisma schema and migrations
+│   ├── api-server/               # NestJS external API: API key auth, published app execution, call logs
+│   │   ├── src/                  # Nest modules, controllers, services, guards, filters
+│   │   └── prisma/               # Prisma schema used by the API service
+│   └── webapp/                   # Lightweight visitor entry for running published workflows
+│       ├── app/                  # Next.js page entry
+│       ├── components/           # Runner panel and result display components
+│       ├── lib/                  # Prisma, types, utilities
+│       └── prisma/               # Prisma schema used by WebApp
+├── packages/                     # Shared packages
+│   └── ai-engine/                # Workflow engine, node protocol, executors, RAG retrieval
+│       ├── src/core/             # WorkflowEngine, GraphBuilder, ExecutionContext
+│       ├── src/nodes/            # Node registry and executors
+│       ├── src/validators/       # Workflow and node config validation
+│       ├── src/knowledge/        # Chunking, embeddings, retrievers
+│       └── src/types/            # Shared workflow, node, execution result types
+├── docker/                       # Local infrastructure orchestration
+│   └── docker-compose.yml        # PostgreSQL, Qdrant
+├── docs/                         # Project documentation
+│   └── database.md               # Tables, relations, cascading rules, vector-store boundary
 ├── .husky/                       # Git hooks
-├── .cspell/                      # 拼写检查词库
-├── package.json                  # 根脚本和工程依赖
-├── pnpm-workspace.yaml           # workspace 包范围
-├── turbo.json                    # Turbo 任务编排
-├── eslint.config.js              # ESLint 配置
-├── .prettierrc                   # Prettier 配置
-├── .prettierignore               # Prettier 忽略规则
-└── cspell.json                   # CSpell 配置
+├── .cspell/                      # Spell-check dictionary
+├── package.json                  # Root scripts and dependencies
+├── pnpm-workspace.yaml           # Workspace package scope
+├── turbo.json                    # Turbo task pipeline
+├── eslint.config.js              # ESLint configuration
+├── .prettierrc                   # Prettier configuration
+├── .prettierignore               # Prettier ignore rules
+└── cspell.json                   # CSpell configuration
 ```
 
-## 模块职责
+## Module Responsibilities
 
-| 模块                 | 职责                                                                                     |
-| -------------------- | ---------------------------------------------------------------------------------------- |
-| `apps/workflow`      | 登录注册、应用管理、工作流编辑器、测试运行、知识库管理、API Key 管理、执行日志、监控面板 |
-| `apps/api-server`    | 暴露 `POST /api/v1/apps/run`，校验 API Key，读取发布快照，调用执行引擎并记录调用历史     |
-| `apps/webapp`        | 面向最终访问者的轻量工作流运行页面，默认端口 `3001`                                      |
-| `packages/ai-engine` | 定义工作流协议、执行上下文、DAG 构建、节点注册与执行、RAG 基础能力                       |
-| `docker`             | 本地 PostgreSQL 和 Qdrant 基础设施                                                       |
+| Module               | Responsibility                                                                                                                                           |
+| -------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `apps/workflow`      | Login and registration, app management, workflow editor, test runs, knowledge-base management, API key management, execution logs, monitoring dashboards |
+| `apps/api-server`    | Exposes `POST /api/v1/apps/run`, validates API keys, reads published snapshots, invokes the execution engine, and records call history                   |
+| `apps/webapp`        | Lightweight runtime page for end users; default port `3001`                                                                                              |
+| `packages/ai-engine` | Defines the workflow protocol, execution context, DAG construction, node registry and execution, and RAG foundations                                     |
+| `docker`             | Local PostgreSQL and Qdrant infrastructure                                                                                                               |
 
-## 整体架构
+## Architecture
 
-项目采用 Monorepo + 多运行时应用 + 共享执行内核的架构。`apps/workflow` 是产品主控台，负责面向用户的编排、测试、发布和管理；`apps/webapp` 是轻量访问入口，用于运行已经发布的应用；`apps/api-server` 是面向第三方系统的服务端 API。三者都围绕 `packages/ai-engine` 工作，避免编辑器、网页访问和外部 API 各自实现一套执行规则。
+The project uses a Monorepo with multiple runtime applications and one shared execution core. `apps/workflow` is the product console for orchestration, testing, publishing, and management. `apps/webapp` is a lightweight access entry for published apps. `apps/api-server` is the server API for third-party systems. All three depend on `packages/ai-engine`, so workflow execution rules stay consistent across editing, web access, and external API calls.
 
 ```text
-平台用户 / 第三方系统
+Platform user / third-party system
         │
-        ├── apps/workflow     # 编排、测试、发布、管理
-        ├── apps/webapp       # 访问已发布应用
-        └── apps/api-server   # API Key 鉴权后的对外调用
+        ├── apps/workflow     # Orchestration, testing, publishing, management
+        ├── apps/webapp       # Access published apps
+        └── apps/api-server   # API-key-protected external calls
                  │
                  ▼
         packages/ai-engine
@@ -99,30 +101,30 @@ ai-workflow/
         PostgreSQL / Qdrant / Ollama / SMTP
 ```
 
-平台内测试运行、WebApp 运行和外部 API 调用都会收敛到 `packages/ai-engine`。这样可以保证编辑器中验证过的工作流，在发布后仍遵循同一套执行规则。
+Platform test runs, WebApp runs, and external API calls all converge on `packages/ai-engine`. This keeps workflows validated in the editor aligned with behavior after publishing.
 
-### 运行时分层
+### Runtime Layers
 
-| 分层             | 主要位置                                                       | 说明                                                                 |
-| ---------------- | -------------------------------------------------------------- | -------------------------------------------------------------------- |
-| 表现层           | `apps/workflow/app`、`apps/workflow/components`、`apps/webapp` | 页面、布局、表单、画布、结果展示和交互状态                           |
-| BFF / Route API  | `apps/workflow/app/api`                                        | 主平台内部 API，处理登录注册、应用管理、工作流保存、测试运行、知识库 |
-| 外部服务 API     | `apps/api-server/src`                                          | 给第三方系统调用，重点处理 API Key 鉴权、发布快照读取和执行记录      |
-| 业务服务层       | `apps/workflow/lib/services`、`apps/api-server/src/modules`    | 封装应用、工作流、知识库、文档处理、调用统计等业务动作               |
-| 执行引擎层       | `packages/ai-engine/src`                                       | DAG 校验、拓扑排序、节点执行、上下文变量、RAG 检索                   |
-| 数据与基础设施层 | `prisma/schema.prisma`、`docker/docker-compose.yml`            | PostgreSQL 存业务数据，Qdrant 存向量索引，Ollama 提供模型能力        |
+| Layer                   | Main location                                                  | Description                                                                                       |
+| ----------------------- | -------------------------------------------------------------- | ------------------------------------------------------------------------------------------------- |
+| Presentation            | `apps/workflow/app`, `apps/workflow/components`, `apps/webapp` | Pages, layouts, forms, canvas, result display, interaction state                                  |
+| BFF / Route API         | `apps/workflow/app/api`                                        | Internal platform API for auth, app management, workflow persistence, test runs, knowledge bases  |
+| External service API    | `apps/api-server/src`                                          | Third-party integration entry focused on API key auth, published snapshots, and execution records |
+| Business services       | `apps/workflow/lib/services`, `apps/api-server/src/modules`    | App, workflow, knowledge-base, document-processing, and usage-stat actions                        |
+| Execution engine        | `packages/ai-engine/src`                                       | DAG validation, topological sorting, node execution, context variables, RAG retrieval             |
+| Data and infrastructure | `prisma/schema.prisma`, `docker/docker-compose.yml`            | PostgreSQL stores business data, Qdrant stores vector indexes, Ollama provides model capability   |
 
-### 数据流边界
+### Data Boundaries
 
-- `Workflow` 保存编辑态 `nodes / edges`，用于平台内持续编辑和测试。
-- `PublishedApp` 保存发布快照，外部 API 和 WebApp 读取快照运行，避免草稿改动影响线上调用。
-- `WorkflowExecution` 记录平台内测试运行，`AppExecution` 记录发布应用被外部调用后的运行历史。
-- PostgreSQL 存用户、应用、工作流、发布版本、执行记录、知识库和文档元数据；Qdrant 存文档切片向量、payload 和检索索引。
-- API Key 只用于已发布应用的外部调用；平台登录态由 `apps/workflow` 的认证逻辑管理。
+- `Workflow` stores draft `nodes / edges` for ongoing editing and platform test runs.
+- `PublishedApp` stores release snapshots. External API and WebApp executions read snapshots so draft changes do not affect live calls.
+- `WorkflowExecution` records platform test runs. `AppExecution` records published-app calls.
+- PostgreSQL stores users, apps, workflows, published versions, execution records, knowledge bases, and document metadata. Qdrant stores document chunk vectors, payloads, and retrieval indexes.
+- API keys are only used for external calls to published apps. Platform login state is managed by `apps/workflow`.
 
-## 工作流模型
+## Workflow Model
 
-工作流是一份可序列化的 DAG 定义，核心类型位于 [`packages/ai-engine/src/types/workflow.ts`](./packages/ai-engine/src/types/workflow.ts)。
+A workflow is a serializable DAG definition. Core types live in [`packages/ai-engine/src/types/workflow.ts`](./packages/ai-engine/src/types/workflow.ts).
 
 ```ts
 export type NodeKind = 'start' | 'llm' | 'http' | 'condition' | 'end' | 'knowledge'
@@ -135,110 +137,110 @@ export interface WorkflowDefinition {
 }
 ```
 
-当前内置节点：
+Built-in nodes:
 
-| 节点        | 作用                       |
-| ----------- | -------------------------- |
-| `start`     | 定义工作流输入参数         |
-| `llm`       | 调用 Ollama 大模型生成内容 |
-| `http`      | 请求外部 HTTP 服务         |
-| `condition` | 基于意图或条件选择分支     |
-| `knowledge` | 从知识库检索相关文档切片   |
-| `end`       | 定义工作流最终输出         |
+| Node        | Purpose                                                  |
+| ----------- | -------------------------------------------------------- |
+| `start`     | Defines workflow input parameters                        |
+| `llm`       | Calls an Ollama LLM to generate content                  |
+| `http`      | Calls an external HTTP service                           |
+| `condition` | Selects a branch based on intent or condition            |
+| `knowledge` | Retrieves relevant document chunks from a knowledge base |
+| `end`       | Defines final workflow outputs                           |
 
-节点配置类型见 [`packages/ai-engine/src/types/node.ts`](./packages/ai-engine/src/types/node.ts)，节点执行器位于 [`packages/ai-engine/src/nodes/executors`](./packages/ai-engine/src/nodes/executors)。
+Node config types are in [`packages/ai-engine/src/types/node.ts`](./packages/ai-engine/src/types/node.ts). Node executors are in [`packages/ai-engine/src/nodes/executors`](./packages/ai-engine/src/nodes/executors).
 
-## 关键执行链路
+## Key Execution Flows
 
-### 平台内测试运行
+### Platform Test Run
 
 ```text
-用户在编辑器点击运行
+User clicks run in the editor
     → components/flow/test-run
     → lib/hooks/use-workflow-runner.ts
     → apps/workflow/app/api/apps/[id]/workflow/run
     → createWorkflowEngine()
     → WorkflowEngine.execute()
-    → SSE 返回节点状态、日志和最终结果
-    → 写入 WorkflowExecution
+    → SSE returns node state, logs, and final result
+    → write WorkflowExecution
 ```
 
-### 外部 API 调用
+### External API Call
 
 ```text
-第三方系统请求 api-server
-    → ApiKeyGuard 校验 Authorization: Bearer <API_KEY>
-    → WorkflowController 接收 POST /api/v1/apps/run
-    → WorkflowService 读取 PublishedApp 快照
+Third-party system calls api-server
+    → ApiKeyGuard validates Authorization: Bearer <API_KEY>
+    → WorkflowController receives POST /api/v1/apps/run
+    → WorkflowService reads PublishedApp snapshot
     → createWorkflowEngine()
     → WorkflowEngine.execute()
-    → 写入 AppExecution
-    → 返回同步结果或 SSE 事件流
+    → write AppExecution
+    → return sync result or SSE stream
 ```
 
-### 知识库处理
+### Knowledge-Base Processing
 
 ```text
-上传文档
-    → 创建 Document 记录
-    → 文本切片
-    → Ollama 生成 embedding
-    → Qdrant 写入向量和 payload
-    → 检索测试或 Knowledge 节点复用同一套 Retriever
+Upload document
+    → create Document record
+    → chunk text
+    → generate embeddings with Ollama
+    → write vectors and payloads to Qdrant
+    → retrieval tests or Knowledge nodes reuse the same Retriever
 ```
 
-## 快速开始
+## Quick Start
 
-### 前置依赖
+### Prerequisites
 
 - Node.js 20+
 - pnpm 9.x
-- Docker 和 Docker Compose
-- 本地 Ollama 服务，默认访问 `http://localhost:11434`
+- Docker and Docker Compose
+- Local Ollama service, default `http://localhost:11434`
 
-如需使用知识库向量化能力，请准备 Embedding 模型：
+To use knowledge-base vectorization, prepare the embedding model:
 
 ```bash
 ollama pull mxbai-embed-large:latest
 ```
 
-LLM 节点和条件节点使用的模型由页面配置决定，需要提前在 Ollama 中拉取对应模型。
+LLM and condition nodes use the model selected in the UI. Pull the required Ollama models before running those nodes.
 
-### 1. 安装依赖
+### 1. Install Dependencies
 
 ```bash
 pnpm install
 ```
 
-### 2. 启动本地基础设施
+### 2. Start Local Infrastructure
 
 ```bash
 pnpm docker:start
 ```
 
-该命令会启动：
+This starts:
 
-- PostgreSQL：`localhost:5433`
-- Qdrant REST API：`localhost:6333`
-- Qdrant gRPC：`localhost:6334`
+- PostgreSQL: `localhost:5433`
+- Qdrant REST API: `localhost:6333`
+- Qdrant gRPC: `localhost:6334`
 
-停止基础设施：
+Stop infrastructure:
 
 ```bash
 pnpm docker:top
 ```
 
-当前脚本名是 `docker:top`，实际执行的是 `docker compose down`。
+The current script name is `docker:top`, but it actually runs `docker compose down`.
 
-### 3. 配置环境变量
+### 3. Configure Environment Variables
 
-`apps/workflow/.env`：
+`apps/workflow/.env`:
 
 ```env
 DATABASE_URL="postgresql://postgres:xiaoer@localhost:5433/postgres"
 ```
 
-`apps/workflow/.env.local`：
+`apps/workflow/.env.local`:
 
 ```env
 DATABASE_URL="postgresql://postgres:xiaoer@localhost:5433/postgres"
@@ -254,12 +256,12 @@ SMTP_PORT="465"
 SMTP_SECURE="true"
 SMTP_USER="your-email@qq.com"
 SMTP_PASSWORD="your-smtp-token"
-SMTP_FROM_NAME="AI 工作流"
+SMTP_FROM_NAME="AI Workflow"
 SMTP_FROM_EMAIL="your-email@qq.com"
 # EMAIL_OVERRIDE_TO="dev-target@example.com"
 ```
 
-`apps/api-server/.env`：
+`apps/api-server/.env`:
 
 ```env
 DATABASE_URL="postgresql://postgres:xiaoer@localhost:5433/postgres"
@@ -268,17 +270,17 @@ OLLAMA_BASE_URL="http://localhost:11434"
 QDRANT_URL="http://localhost:6333"
 ```
 
-`apps/webapp/.env`：
+`apps/webapp/.env`:
 
 ```env
 DATABASE_URL="postgresql://postgres:xiaoer@localhost:5433/postgres"
 ```
 
-SMTP 配置用于注册验证邮件。`SMTP_PASSWORD` 通常是邮箱服务商提供的授权码或应用专用密码，不是邮箱登录密码。
+SMTP is used for registration verification emails. `SMTP_PASSWORD` is usually the provider's authorization token or app-specific password, not the mailbox login password.
 
-### 4. 初始化数据库
+### 4. Initialize the Database
 
-首次启动需要执行迁移，并分别为三个应用生成 Prisma Client：
+On first setup, run migrations and generate Prisma Client for each app:
 
 ```bash
 (cd apps/workflow && pnpm exec prisma migrate deploy)
@@ -287,58 +289,58 @@ SMTP 配置用于注册验证邮件。`SMTP_PASSWORD` 通常是邮箱服务商�
 (cd apps/webapp && pnpm exec prisma generate)
 ```
 
-### 5. 启动开发服务
+### 5. Start Development Servers
 
-终端 1：
+Terminal 1:
 
 ```bash
 pnpm dev
 ```
 
-该命令通过 Turbo 启动有 `dev` 脚本的工作区应用，主要包含：
+Turbo starts workspace apps that provide a `dev` script, mainly:
 
-- `workflow`：`http://localhost:3000`
-- `webapp`：`http://localhost:3001`
+- `workflow`: `http://localhost:3000`
+- `webapp`: `http://localhost:3001`
 
-终端 2：
+Terminal 2:
 
 ```bash
 pnpm --filter @ai-workflow/api-server start:dev
 ```
 
-API 服务默认地址：
+API service defaults:
 
-- `api-server`：`http://localhost:3100`
-- 工作流运行接口：`POST http://localhost:3100/api/v1/apps/run`
+- `api-server`: `http://localhost:3100`
+- Workflow run endpoint: `POST http://localhost:3100/api/v1/apps/run`
 
-## 常用命令
+## Common Commands
 
 ```bash
-# 开发
+# Development
 pnpm dev
 pnpm --filter @ai-workflow/api-server start:dev
 
-# 构建与类型检查
+# Build and type check
 pnpm build
 pnpm typecheck
 pnpm --filter @ai-workflow/ai-engine test
 
-# 代码质量
+# Code quality
 pnpm lint
 pnpm spellcheck
 
-# 基础设施
+# Infrastructure
 pnpm docker:start
 pnpm docker:top
 
-# 清理
+# Cleanup
 pnpm clean
 pnpm clean:all
 ```
 
-## API 调用示例
+## API Call Example
 
-已发布应用并创建 API Key 后，可以通过 `api-server` 调用：
+After publishing an app and creating an API key, call it through `api-server`:
 
 ```bash
 curl -X POST "http://localhost:3100/api/v1/apps/run" \
@@ -346,144 +348,144 @@ curl -X POST "http://localhost:3100/api/v1/apps/run" \
   -H "Content-Type: application/json" \
   -d '{
     "inputs": {
-      "question": "请介绍这个产品"
+      "question": "Please introduce this product"
     },
     "stream": false
   }'
 ```
 
-流式调用时传入 `"stream": true`，服务端会返回 SSE 事件。
+Set `"stream": true` for streaming calls. The server returns SSE events.
 
-## 重要源码入口
+## Important Source Entries
 
-| 主题             | 文件                                                                                                                           |
-| ---------------- | ------------------------------------------------------------------------------------------------------------------------------ |
-| 工作流类型       | [`packages/ai-engine/src/types/workflow.ts`](./packages/ai-engine/src/types/workflow.ts)                                       |
-| 节点配置类型     | [`packages/ai-engine/src/types/node.ts`](./packages/ai-engine/src/types/node.ts)                                               |
-| 执行引擎         | [`packages/ai-engine/src/core/engine.ts`](./packages/ai-engine/src/core/engine.ts)                                             |
-| 图构建与拓扑排序 | [`packages/ai-engine/src/core/graph-builder.ts`](./packages/ai-engine/src/core/graph-builder.ts)                               |
-| 执行上下文       | [`packages/ai-engine/src/core/context.ts`](./packages/ai-engine/src/core/context.ts)                                           |
-| 节点注册         | [`packages/ai-engine/src/nodes/index.ts`](./packages/ai-engine/src/nodes/index.ts)                                             |
-| 节点执行器       | [`packages/ai-engine/src/nodes/executors`](./packages/ai-engine/src/nodes/executors)                                           |
-| 知识库检索       | [`packages/ai-engine/src/knowledge`](./packages/ai-engine/src/knowledge)                                                       |
-| 工作流编辑器     | [`apps/workflow/components/flow/editor`](./apps/workflow/components/flow/editor)                                               |
-| 节点配置表单     | [`apps/workflow/components/flow/settings/forms`](./apps/workflow/components/flow/settings/forms)                               |
-| 测试运行 Hook    | [`apps/workflow/lib/hooks/use-workflow-runner.ts`](./apps/workflow/lib/hooks/use-workflow-runner.ts)                           |
-| 知识库服务       | [`apps/workflow/lib/services/knowledge-service.ts`](./apps/workflow/lib/services/knowledge-service.ts)                         |
-| 文档处理         | [`apps/workflow/lib/services/document-processor.ts`](./apps/workflow/lib/services/document-processor.ts)                       |
-| 对外 API 控制器  | [`apps/api-server/src/modules/workflow/workflow.controller.ts`](./apps/api-server/src/modules/workflow/workflow.controller.ts) |
-| 对外 API 服务    | [`apps/api-server/src/modules/workflow/workflow.service.ts`](./apps/api-server/src/modules/workflow/workflow.service.ts)       |
+| Topic                                      | File                                                                                                                           |
+| ------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------ |
+| Workflow types                             | [`packages/ai-engine/src/types/workflow.ts`](./packages/ai-engine/src/types/workflow.ts)                                       |
+| Node config types                          | [`packages/ai-engine/src/types/node.ts`](./packages/ai-engine/src/types/node.ts)                                               |
+| Execution engine                           | [`packages/ai-engine/src/core/engine.ts`](./packages/ai-engine/src/core/engine.ts)                                             |
+| Graph construction and topological sorting | [`packages/ai-engine/src/core/graph-builder.ts`](./packages/ai-engine/src/core/graph-builder.ts)                               |
+| Execution context                          | [`packages/ai-engine/src/core/context.ts`](./packages/ai-engine/src/core/context.ts)                                           |
+| Node registry                              | [`packages/ai-engine/src/nodes/index.ts`](./packages/ai-engine/src/nodes/index.ts)                                             |
+| Node executors                             | [`packages/ai-engine/src/nodes/executors`](./packages/ai-engine/src/nodes/executors)                                           |
+| Knowledge retrieval                        | [`packages/ai-engine/src/knowledge`](./packages/ai-engine/src/knowledge)                                                       |
+| Workflow editor                            | [`apps/workflow/components/flow/editor`](./apps/workflow/components/flow/editor)                                               |
+| Node config forms                          | [`apps/workflow/components/flow/settings/forms`](./apps/workflow/components/flow/settings/forms)                               |
+| Test-run hook                              | [`apps/workflow/lib/hooks/use-workflow-runner.ts`](./apps/workflow/lib/hooks/use-workflow-runner.ts)                           |
+| Knowledge service                          | [`apps/workflow/lib/services/knowledge-service.ts`](./apps/workflow/lib/services/knowledge-service.ts)                         |
+| Document processing                        | [`apps/workflow/lib/services/document-processor.ts`](./apps/workflow/lib/services/document-processor.ts)                       |
+| External API controller                    | [`apps/api-server/src/modules/workflow/workflow.controller.ts`](./apps/api-server/src/modules/workflow/workflow.controller.ts) |
+| External API service                       | [`apps/api-server/src/modules/workflow/workflow.service.ts`](./apps/api-server/src/modules/workflow/workflow.service.ts)       |
 
-## 数据模型
+## Data Model
 
-Prisma schema 位于各应用的 `prisma/schema.prisma`。当前核心模型包括：
+Prisma schemas live under each application's `prisma/schema.prisma`. Core models include:
 
-| 模型                | 说明                                        |
-| ------------------- | ------------------------------------------- |
-| `User`              | 用户、邮箱验证信息                          |
-| `App`               | AI 应用基础信息、发布状态、当前激活发布版本 |
-| `Workflow`          | 编辑态工作流版本，保存 nodes / edges JSON   |
-| `PublishedApp`      | 发布态应用快照                              |
-| `WorkflowExecution` | 平台内测试运行记录                          |
-| `AppExecution`      | 外部 API 调用记录                           |
-| `ApiKey`            | 应用 API Key                                |
-| `KnowledgeBase`     | 知识库配置                                  |
-| `Document`          | 知识库文档元数据，向量切片存储在 Qdrant     |
+| Model               | Description                                                          |
+| ------------------- | -------------------------------------------------------------------- |
+| `User`              | User and email verification data                                     |
+| `App`               | AI app metadata, publish status, active published version            |
+| `Workflow`          | Draft workflow version with `nodes / edges` JSON                     |
+| `PublishedApp`      | Published app snapshot                                               |
+| `WorkflowExecution` | Platform test-run record                                             |
+| `AppExecution`      | External API call record                                             |
+| `ApiKey`            | Application API key                                                  |
+| `KnowledgeBase`     | Knowledge-base configuration                                         |
+| `Document`          | Knowledge-base document metadata; vector chunks are stored in Qdrant |
 
-完整字段、索引、关系和级联删除规则见 [`docs/database.md`](./docs/database.md)。
+See [`docs/database.md`](./docs/database.md) for complete fields, indexes, relations, and cascading rules.
 
-## 新增节点的推荐路径
+## Recommended Path for Adding a Node
 
-1. 在 `packages/ai-engine/src/types` 扩展节点类型和配置类型。
-2. 在 `packages/ai-engine/src/validators` 增加配置校验。
-3. 在 `packages/ai-engine/src/nodes/executors` 实现节点执行器。
-4. 在 `packages/ai-engine/src/nodes/index.ts` 注册执行器。
-5. 在 `apps/workflow/components/flow/nodes` 增加画布节点组件。
-6. 在 `apps/workflow/components/flow/settings/forms` 增加配置表单。
+1. Extend node type and config types in `packages/ai-engine/src/types`.
+2. Add config validation in `packages/ai-engine/src/validators`.
+3. Implement the node executor in `packages/ai-engine/src/nodes/executors`.
+4. Register the executor in `packages/ai-engine/src/nodes/index.ts`.
+5. Add the canvas node component in `apps/workflow/components/flow/nodes`.
+6. Add the config form in `apps/workflow/components/flow/settings/forms`.
 
-执行逻辑应优先落在 `ai-engine`，这样平台内测试、WebApp 运行和对外 API 调用可以自然复用。
+Execution behavior should live in `ai-engine` first, so platform test runs, WebApp runs, and external API calls can reuse it naturally.
 
-## 前端工程化
+## Frontend Engineering
 
-### 应用组织
+### Application Organization
 
-`apps/workflow` 采用 Next.js App Router。页面级入口放在 `app/`，业务 UI 放在 `components/`，跨页面复用的请求封装、上下文、类型和工具函数放在 `lib/`。编辑器相关代码集中在 `components/flow`，知识库相关代码集中在 `components/knowledge`，应用管理、API Key、监控和执行日志分别有独立组件目录，便于按业务域维护。
+`apps/workflow` uses the Next.js App Router. Page-level entries live in `app/`; business UI lives in `components/`; reusable request wrappers, contexts, types, and utilities live in `lib/`. Editor-related code is grouped under `components/flow`; knowledge-base code is grouped under `components/knowledge`; app management, API keys, monitoring, and execution logs each have their own component areas.
 
-`apps/webapp` 保持轻量，只承载已发布应用的访问和运行，不承担编辑、发布、知识库管理等主控台职责。
+`apps/webapp` stays lightweight. It only runs published apps and does not own editing, publishing, or knowledge-base management.
 
-### UI 与交互约定
+### UI and Interaction Conventions
 
-- 组件使用 React 19 + TypeScript，基础 UI 采用 shadcn/ui 风格组件，样式使用 Tailwind CSS 4。
-- 工作流画布由 `@xyflow/react` 承载，节点展示组件、节点配置表单和执行测试面板分目录维护。
-- 表单优先使用 `react-hook-form`，复杂文本输入和变量引用使用 Tiptap 相关组件。
-- 图标统一使用 `lucide-react` 或已有 Tabler 图标；应用图标通过 `apps/workflow/components/app-icon.tsx` 做统一映射，旧 emoji 数据只作为兼容输入。
-- 页面和组件尽量以业务域拆分，执行规则不写在 UI 里，工作流运行逻辑优先下沉到 `packages/ai-engine`。
+- Components use React 19 and TypeScript. Base UI follows shadcn/ui-style components with Tailwind CSS 4.
+- The workflow canvas is powered by `@xyflow/react`. Node display components, node config forms, and the execution test panel are maintained in separate directories.
+- Forms prefer `react-hook-form`. Complex text inputs and variable references use Tiptap-related components.
+- Icons are unified through `lucide-react` or existing Tabler icons. Application icons are mapped through `apps/workflow/components/app-icon.tsx`; legacy emoji values are only treated as compatibility input.
+- Pages and components are split by business domain. Execution rules should not live in UI code; workflow runtime logic should be pushed down into `packages/ai-engine`.
 
-### 状态与接口
+### State and API Access
 
-- 前端页面通过 `lib/services/*` 封装请求，页面组件不直接散落复杂 `fetch` 逻辑。
-- 登录态通过 `apps/workflow/app/api/auth/*` 和 `lib/auth.ts` 维护。
-- 平台内工作流测试使用 SSE 返回节点状态、日志和最终结果，对应 Hook 为 `apps/workflow/lib/hooks/use-workflow-runner.ts`。
-- 发布应用的外部调用走 `apps/api-server`，主控台管理和测试走 `apps/workflow/app/api`，两者共享数据库和执行引擎，但运行入口分离。
+- Frontend pages wrap requests through `lib/services/*`; page components should not scatter complex `fetch` logic.
+- Login state is maintained through `apps/workflow/app/api/auth/*` and `lib/auth.ts`.
+- Platform workflow test runs use SSE to return node state, logs, and final results. The related hook is `apps/workflow/lib/hooks/use-workflow-runner.ts`.
+- External calls to published apps go through `apps/api-server`; console management and testing go through `apps/workflow/app/api`. They share the database and execution engine, but runtime entries stay separate.
 
-### 代码质量与提交链路
+### Quality and Commit Flow
 
-- TypeScript：各 workspace 提供 `typecheck`，根目录脚本会先构建 `ai-engine`，再按 `ai-engine`、`workflow`、`webapp`、`api-server` 的顺序执行类型检查。
-- ESLint：根目录 `eslint.config.js` 统一规则。
-- Prettier：`.prettierrc` 定义格式化风格，`.prettierignore` 排除构建产物和不适合格式化的文件。
-- CSpell：`cspell.json` 和 `.cspell/custom-words.txt` 维护项目词库，避免技术名词误报。
-- Husky + lint-staged：提交前执行 staged 文件检查、拼写检查和类型检查。
-- Turbo：`turbo.json` 管理 build、typecheck 等任务依赖和缓存。
+- TypeScript: each workspace provides `typecheck`. The root script builds `ai-engine` first, then runs type checks for `ai-engine`, `workflow`, `webapp`, and `api-server`.
+- ESLint: root `eslint.config.js` provides shared rules.
+- Prettier: `.prettierrc` defines formatting style; `.prettierignore` excludes build artifacts and files that should not be formatted.
+- CSpell: `cspell.json` and `.cspell/custom-words.txt` maintain project vocabulary and reduce false positives.
+- Husky + lint-staged: pre-commit checks staged files, spelling, and types.
+- Turbo: `turbo.json` manages task dependencies and cache behavior for build and typecheck.
 
-## 后端工程化
+## Backend Engineering
 
-### 服务边界
+### Service Boundaries
 
-后端分为主平台 BFF 和对外 API 两类入口。`apps/workflow/app/api` 使用 Next.js Route Handlers，为主控台提供登录注册、应用管理、工作流保存、测试运行、知识库和监控等内部接口。`apps/api-server` 使用 NestJS，为第三方系统提供发布应用调用入口，重点承担 API Key 鉴权、发布快照读取、执行引擎调用和外部调用日志记录。
+The backend has two entry categories: the main platform BFF and the external API. `apps/workflow/app/api` uses Next.js Route Handlers for login, registration, app management, workflow saving, test runs, knowledge bases, and monitoring. `apps/api-server` uses NestJS to expose the published-app invocation endpoint for third-party systems, focusing on API key authentication, published snapshot reads, execution engine invocation, and external call logging.
 
-两类入口共享 PostgreSQL、Prisma schema 和 `packages/ai-engine`，但职责边界不同：主平台 API 面向已登录用户和编辑态数据，`api-server` 面向外部系统和发布态快照。
+Both entries share PostgreSQL, Prisma schemas, and `packages/ai-engine`, but their responsibilities differ: the platform API targets logged-in users and draft data, while `api-server` targets external systems and published snapshots.
 
-### API 设计与鉴权
+### API Design and Authentication
 
-- 主平台接口统一放在 `apps/workflow/app/api`，通过 `lib/auth.ts` 获取当前登录用户，并在具体 Route Handler 中校验资源归属。
-- 对外 API 放在 `apps/api-server/src/modules/workflow`，入口为 `POST /api/v1/apps/run`。
-- 外部调用通过 `ApiKeyGuard` 校验 `Authorization: Bearer <API_KEY>`，只允许访问已发布且 API Key 有效的应用。
-- 主平台 API 使用 `lib/api-response.ts` 返回统一成功/错误结构；NestJS 服务使用全局 `TransformInterceptor` 和 `HttpExceptionFilter` 统一响应和异常处理。
-- 长任务或需要过程反馈的执行链路使用 SSE 返回节点状态、日志、错误和最终结果。
+- Platform APIs live under `apps/workflow/app/api`. They use `lib/auth.ts` to get the current user and check resource ownership inside route handlers.
+- External APIs live under `apps/api-server/src/modules/workflow`. The entry is `POST /api/v1/apps/run`.
+- External calls are authenticated by `ApiKeyGuard` through `Authorization: Bearer <API_KEY>`, and are limited to published apps with valid API keys.
+- Platform APIs return unified success/error structures through `lib/api-response.ts`. NestJS uses the global `TransformInterceptor` and `HttpExceptionFilter` to normalize responses and errors.
+- Long-running or progress-sensitive execution paths use SSE to return node state, logs, errors, and final results.
 
-### 数据访问与持久化
+### Data Access and Persistence
 
-- Prisma 是主要数据访问层，schema 位于各应用的 `prisma/schema.prisma`，数据库结构以 `apps/workflow/prisma/migrations` 为迁移来源。
-- 业务数据存 PostgreSQL，包括用户、应用、工作流、发布快照、API Key、执行记录、知识库和文档元数据。
-- 向量数据存 Qdrant，包含文档切片向量、payload 和检索索引；PostgreSQL 只保存知识库配置、文档元数据和处理状态。
-- 编辑态工作流写入 `Workflow`，发布时复制为 `PublishedApp` 快照，外部调用只读取发布快照，避免草稿改动影响线上。
-- 平台测试写入 `WorkflowExecution`，外部 API 调用写入 `AppExecution`，便于监控、审计和问题排查。
+- Prisma is the primary data access layer. Schemas live under each application's `prisma/schema.prisma`; `apps/workflow/prisma/migrations` is the migration source.
+- Business data is stored in PostgreSQL, including users, apps, workflows, published snapshots, API keys, execution records, knowledge bases, and document metadata.
+- Vector data is stored in Qdrant, including document chunk vectors, payloads, and retrieval indexes. PostgreSQL only stores knowledge-base configuration, document metadata, and processing status.
+- Draft workflows are written to `Workflow`. Publishing copies them into `PublishedApp` snapshots. External calls only read published snapshots so draft changes cannot affect live behavior.
+- Platform tests write `WorkflowExecution`; external API calls write `AppExecution` for monitoring, audit, and debugging.
 
-### 配置与安全
+### Configuration and Security
 
-- 数据库、Qdrant、Ollama、SMTP、JWT Secret、服务端口等均通过环境变量注入，本地示例见“快速开始”章节。
-- `.env*` 被 `.gitignore` 排除，不应提交真实密钥、SMTP 授权码、JWT Secret 或生产数据库连接串。
-- API Key 只在创建时返回完整值，后续展示使用 `keyPrefix`，服务端通过完整 key 做校验。
-- 删除用户、应用、工作流、发布版本、知识库等资源时依赖 Prisma relation 和数据库外键规则控制级联边界，详细关系见 [`docs/database.md`](./docs/database.md)。
+- Database, Qdrant, Ollama, SMTP, JWT secret, and service ports are injected through environment variables. Local examples are listed in Quick Start.
+- `.env*` is ignored by `.gitignore`. Do not commit real secrets, SMTP tokens, JWT secrets, or production database URLs.
+- API keys are only returned in full at creation time. Later displays use `keyPrefix`; the server validates against the full key.
+- Deleting users, apps, workflows, published versions, and knowledge bases relies on Prisma relations and database foreign keys to control cascading boundaries. See [`docs/database.md`](./docs/database.md) for details.
 
-### 后端质量约定
+### Backend Quality Guidelines
 
-- 新增业务接口时优先补齐输入校验、资源归属校验、错误码和执行记录。
-- 工作流执行、节点行为和 RAG 检索能力优先放在 `packages/ai-engine`，避免在 Route Handler 或 Controller 中复制执行逻辑。
-- NestJS 模块按 Controller、Service、DTO、Guard、Prisma Service 分层；主平台 Route Handler 中复杂逻辑应下沉到 `lib/services/*`。
-- 修改 Prisma schema 后需要同步迁移、重新生成 Prisma Client，并更新 [`docs/database.md`](./docs/database.md)。
-- 提交前执行 `pnpm lint`、`pnpm spellcheck`、`pnpm typecheck`，避免格式、拼写和类型问题进入主分支。
+- New business APIs should include input validation, resource ownership checks, error codes, and execution records when relevant.
+- Workflow execution, node behavior, and RAG retrieval should live in `packages/ai-engine` first to avoid duplicating runtime rules in route handlers or controllers.
+- NestJS modules follow Controller, Service, DTO, Guard, and Prisma Service layers. Complex logic in platform route handlers should be moved into `lib/services/*`.
+- After changing Prisma schemas, add migrations, regenerate Prisma Client, and update [`docs/database.md`](./docs/database.md).
+- Before committing, run `pnpm lint`, `pnpm spellcheck`, and `pnpm typecheck`.
 
-## 工程规范
+## Engineering Standards
 
-- ESLint 配置：[`eslint.config.js`](./eslint.config.js)
-- Prettier 配置： [`.prettierrc`](./.prettierrc)
-- CSpell 配置：[`cspell.json`](./cspell.json)
-- Commitlint 配置：[`commitlint.config.js`](./commitlint.config.js)
-- Husky hooks：`.husky/`
-- 忽略规则： [`.gitignore`](./.gitignore)
+- ESLint configuration: [`eslint.config.js`](./eslint.config.js)
+- Prettier configuration: [`.prettierrc`](./.prettierrc)
+- CSpell configuration: [`cspell.json`](./cspell.json)
+- Commitlint configuration: [`commitlint.config.js`](./commitlint.config.js)
+- Husky hooks: `.husky/`
+- Ignore rules: [`.gitignore`](./.gitignore)
 
-提交前建议执行：
+Recommended pre-commit checks:
 
 ```bash
 pnpm lint
@@ -491,11 +493,11 @@ pnpm spellcheck
 pnpm typecheck
 ```
 
-## 维护说明
+## Maintenance Notes
 
-- 不提交 `.env*`、`node_modules`、`.next`、`.turbo`、`dist`、`build` 和本地数据库数据。
-- 工作流执行行为的变更优先在 `packages/ai-engine` 实现，并同步验证平台测试运行、WebApp 运行和 API 调用。
-- 生产环境部署前需要替换数据库、SMTP、Ollama、Qdrant 等外部服务配置，并确保 API Key、JWT Secret 等敏感配置由环境变量注入。
+- Do not commit `.env*`, `node_modules`, `.next`, `.turbo`, `dist`, `build`, or local database data.
+- Changes to workflow execution behavior should be implemented in `packages/ai-engine` first and verified across platform test runs, WebApp runs, and API calls.
+- Before production deployment, replace database, SMTP, Ollama, Qdrant, and other external service configuration, and ensure API keys, JWT secrets, and similar sensitive values are injected through environment variables.
 
 ## License
 
