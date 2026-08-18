@@ -7,6 +7,7 @@ import { toast } from 'sonner'
 import type { ExecutionState, InputField, NodeExecution, SSEEvent } from '@/lib/types'
 import { cn } from '@/lib/utils'
 
+import { AppIcon } from './app-icon'
 import { ExecutionPanel } from './execution-panel'
 
 interface WorkflowRunnerProps {
@@ -199,10 +200,8 @@ export function WorkflowRunner({ appId, appName, appIcon, inputs }: WorkflowRunn
             <div className="flex w-165 shrink-0 flex-col border-r bg-white p-8">
                 {/* App title */}
                 <div className="mb-8 flex items-center gap-3">
-                    <div className="flex size-10 items-center justify-center rounded-xl bg-gradient-to-br from-blue-400 to-purple-500 text-lg">
-                        {appIcon}
-                    </div>
-                    <h1 className="text-lg font-semibold">{appName}</h1>
+                    <AppIcon value={appIcon} />
+                    <h1 className="min-w-0 truncate text-lg font-semibold">{appName}</h1>
                 </div>
 
                 {/* Input form */}

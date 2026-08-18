@@ -27,7 +27,7 @@ interface User {
 const navItems = [
     { title: '工作室', url: '/apps', icon: ZapIcon, matchPaths: ['/apps', '/app'], color: '#06B6D4' },
     { title: '知识库', url: '/knowledge', icon: BookOpenIcon, color: '#8B5CF6' },
-    { title: '工具', url: '/tools', icon: WrenchIcon, color: '#F59E0B' },
+    // { title: '工具', url: '/tools', icon: WrenchIcon, color: '#F59E0B' },
 ]
 
 export function GlobalHeader() {
