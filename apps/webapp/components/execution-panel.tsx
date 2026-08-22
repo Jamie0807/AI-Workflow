@@ -135,11 +135,11 @@ export function ExecutionPanel({ execution }: ExecutionPanelProps) {
                 <div className="border-t bg-white/80 p-4">
                     <h4 className="mb-2 text-sm font-medium">输出结果</h4>
                     {primaryTextOutput ? (
-                        <div className="rounded-lg bg-muted/50 p-3 text-sm leading-7 whitespace-pre-wrap break-words">
+                        <div className="max-h-[60vh] overflow-y-auto rounded-lg bg-muted/50 p-3 text-sm leading-7 whitespace-pre-wrap break-words">
                             {primaryTextOutput}
                         </div>
                     ) : (
-                        <pre className="overflow-x-auto rounded-lg bg-muted/50 p-3 text-xs whitespace-pre-wrap break-words">
+                        <pre className="max-h-[60vh] overflow-auto rounded-lg bg-muted/50 p-3 text-xs whitespace-pre-wrap break-words">
                             {JSON.stringify(execution.outputs, null, 2)}
                         </pre>
                     )}
