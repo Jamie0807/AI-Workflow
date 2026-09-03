@@ -17,6 +17,8 @@ interface OutputParam {
     name: string
     type: string
     value: string
+    path?: string
+    fallback?: string
     description?: string
 }
 

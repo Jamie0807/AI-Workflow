@@ -1,4 +1,5 @@
 import type { EndNodeConfig, ExecutionContext, ExecutionLogger, NodeExecutionResult, OutputVariableSchema } from '../../types'
+import { parseJsonValue, resolveJsonPath } from '../../utils/json-path'
 import { BaseNodeExecutor } from '../base-executor'
 
 /**
@@ -17,19 +18,8 @@ export class EndExecutor extends BaseNodeExecutor<EndNodeConfig> {
         const outputs: Record<string, unknown> = {}
 
         for (const output of config.outputs || []) {
-            // 解析变量表达式
-            let value: unknown
-            if (output.value && output.value.startsWith('${')) {
-                value = context.resolveVariable(output.value)
-                if (value === undefined) {
-                    logger.warn(`Variable not resolved: ${output.value}`)
-                    value = output.value // 保留原始表达式
-                } else {
-                    logger.variableResolve(output.value, output.value, value)
-                }
-            } else {
-                value = context.resolveText(output.value || '')
-            }
+            const rawValue = this.resolveConfiguredValue(output.value, context, logger)
+            const value = this.resolveOutputValue(output, rawValue, context, logger)
 
             // 类型转换
             outputs[output.name] = this.convertType(value, output.type)
@@ -37,6 +27,8 @@ export class EndExecutor extends BaseNodeExecutor<EndNodeConfig> {
             logger.debug(`Output parameter collected: ${output.name}`, {
                 name: output.name,
                 expression: output.value,
+                path: output.path,
+                fallback: output.fallback,
                 value: outputs[output.name],
                 type: output.type,
             })
@@ -47,6 +39,67 @@ export class EndExecutor extends BaseNodeExecutor<EndNodeConfig> {
             outputs,
             duration: 0,
         }
+    }
+
+    private resolveConfiguredValue(value: string | undefined, context: ExecutionContext, logger: ExecutionLogger): unknown {
+        if (value && value.startsWith('${')) {
+            const resolvedValue = context.resolveVariable(value)
+
+            if (resolvedValue === undefined) {
+                logger.warn(`Variable not resolved: ${value}`)
+                return value
+            }
+
+            logger.variableResolve(value, value, resolvedValue)
+            return resolvedValue
+        }
+
+        return context.resolveText(value || '')
+    }
+
+    private resolveOutputValue(
+        output: EndNodeConfig['outputs'][number],
+        rawValue: unknown,
+        context: ExecutionContext,
+        logger: ExecutionLogger
+    ): unknown {
+        const path = output.path?.trim()
+
+        if (!path) {
+            return rawValue
+        }
+
+        const parsedValue = parseJsonValue(rawValue)
+
+        if (parsedValue === undefined) {
+            logger.warn('Failed to parse output value as JSON for path extraction', {
+                outputName: output.name,
+                path,
+                expression: output.value,
+            })
+            return this.resolveFallbackValue(output.fallback, context, logger)
+        }
+
+        const resolvedPath = resolveJsonPath(parsedValue, path)
+
+        if (!resolvedPath.found) {
+            logger.warn('JSON path not found for output parameter', {
+                outputName: output.name,
+                path,
+                expression: output.value,
+            })
+            return undefined
+        }
+
+        return resolvedPath.value
+    }
+
+    private resolveFallbackValue(value: string | undefined, context: ExecutionContext, logger: ExecutionLogger): unknown {
+        if (!value) {
+            return undefined
+        }
+
+        return this.resolveConfiguredValue(value, context, logger)
     }
 
     private convertType(value: unknown, type: string): unknown {

@@ -1,6 +1,6 @@
 'use client'
 
-import { AlertCircleIcon, CheckCircleIcon, ChevronDownIcon, CircleIcon, LoaderIcon } from 'lucide-react'
+import { AlertCircleIcon, CheckCircleIcon, ChevronDownIcon, CircleIcon, ClipboardIcon, LoaderIcon } from 'lucide-react'
 import { useState } from 'react'
 
 import type { ExecutionState, NodeExecution, NodeStatus } from '@/lib/types'
@@ -11,6 +11,14 @@ interface ExecutionPanelProps {
 }
 
 const TEXT_OUTPUT_KEYS = ['translation', 'result', 'output', 'content', 'text', 'answer']
+const STRUCTURED_OUTPUT_FIELDS = [
+    { key: 'summary', label: '摘要' },
+    { key: 'risk_level', label: '风险等级' },
+    { key: 'key_findings', label: '关键发现' },
+    { key: 'recommendations', label: '建议' },
+    { key: 'sources', label: '数据来源' },
+    { key: 'limitations', label: '信息限制' },
+] as const
 
 function getPrimaryTextOutput(outputs: Record<string, unknown> | undefined): string | null {
     if (!outputs) return null
@@ -28,6 +36,51 @@ function getPrimaryTextOutput(outputs: Record<string, unknown> | undefined): str
     }
 
     return null
+}
+
+function formatOutputValue(value: unknown): string[] {
+    if (Array.isArray(value)) {
+        return value.map(item => (typeof item === 'string' ? item : JSON.stringify(item)))
+    }
+
+    if (value === null || value === undefined) return []
+    return [typeof value === 'string' ? value : JSON.stringify(value)]
+}
+
+function hasStructuredOutput(outputs: Record<string, unknown>): boolean {
+    return STRUCTURED_OUTPUT_FIELDS.some(({ key }) => outputs[key] !== undefined)
+}
+
+function StructuredOutput({ outputs }: { outputs: Record<string, unknown> }) {
+    if (!hasStructuredOutput(outputs)) return null
+
+    return (
+        <div className="mt-4 space-y-3">
+            {STRUCTURED_OUTPUT_FIELDS.map(({ key, label }) => {
+                const values = formatOutputValue(outputs[key])
+                if (outputs[key] === undefined) return null
+
+                return (
+                    <section key={key} className="rounded-lg border border-slate-200 bg-white/70 p-3">
+                        <h5 className="mb-2 text-xs font-medium text-slate-600">{label}</h5>
+                        {values.length === 0 ? (
+                            <p className="text-sm text-slate-500">暂无</p>
+                        ) : values.length === 1 ? (
+                            <p className="text-sm leading-6 whitespace-pre-wrap break-words text-slate-800">{values[0]}</p>
+                        ) : (
+                            <ul className="list-disc space-y-1 pl-5 text-sm leading-6 text-slate-800">
+                                {values.map((item, index) => (
+                                    <li key={`${key}-${index}`} className="break-words">
+                                        {item}
+                                    </li>
+                                ))}
+                            </ul>
+                        )}
+                    </section>
+                )
+            })}
+        </div>
+    )
 }
 
 // 节点图标映射
@@ -135,9 +188,24 @@ export function ExecutionPanel({ execution }: ExecutionPanelProps) {
                 <div className="border-t bg-white/80 p-4">
                     <h4 className="mb-2 text-sm font-medium">输出结果</h4>
                     {primaryTextOutput ? (
-                        <div className="max-h-[60vh] overflow-y-auto rounded-lg bg-muted/50 p-3 text-sm leading-7 whitespace-pre-wrap break-words">
-                            {primaryTextOutput}
-                        </div>
+                        <>
+                            <div className="max-h-[60vh] overflow-y-auto rounded-lg bg-muted/50 p-3 text-sm leading-7 whitespace-pre-wrap break-words">
+                                {primaryTextOutput}
+                            </div>
+                            <StructuredOutput outputs={execution.outputs} />
+                            <details className="group mt-4 rounded-lg border border-slate-200 bg-white/60">
+                                <summary className="flex cursor-pointer list-none items-center justify-between gap-2 px-3 py-2 text-xs font-medium text-slate-600 [&::-webkit-details-marker]:hidden">
+                                    <span className="flex items-center gap-2">
+                                        <ClipboardIcon className="size-3.5" />
+                                        查看原始 JSON
+                                    </span>
+                                    <ChevronDownIcon className="size-4 transition-transform group-open:rotate-180" />
+                                </summary>
+                                <pre className="max-h-[40vh] overflow-auto border-t border-slate-200 bg-muted/50 p-3 text-xs whitespace-pre-wrap break-words">
+                                    {JSON.stringify(execution.outputs, null, 2)}
+                                </pre>
+                            </details>
+                        </>
                     ) : (
                         <pre className="max-h-[60vh] overflow-auto rounded-lg bg-muted/50 p-3 text-xs whitespace-pre-wrap break-words">
                             {JSON.stringify(execution.outputs, null, 2)}

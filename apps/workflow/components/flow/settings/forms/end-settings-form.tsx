@@ -10,7 +10,6 @@ import { Input } from '@/components/ui/input'
 import { getAvailableNodeOutputs } from '../node-outputs'
 import { NodeSettingsFormProps } from '../types'
 import { VariableEditor } from '../variable-editor'
-import { VariableRenderer } from '../variable-renderer'
 
 /**
  * 输出参数类型
@@ -24,6 +23,8 @@ export interface OutputParam {
     name: string
     type: OutputParamType
     value: string // 使用表达式引用其他节点的输出，如 ${llm-1.output}
+    path?: string
+    fallback?: string
     description?: string
 }
 
@@ -90,6 +91,34 @@ function OutputParamCard({
                         />
                     </FieldContent>
                 </Field>
+
+                <Field className="w-full">
+                    <FieldLabel className="text-xs">JSON 路径</FieldLabel>
+                    <FieldContent>
+                        <Input
+                            value={param.path || ''}
+                            onChange={e => onChange(index, { path: e.target.value })}
+                            placeholder="result"
+                            className="h-8 text-sm"
+                        />
+                    </FieldContent>
+                </Field>
+
+                <Field className="w-full">
+                    <FieldLabel className="text-xs">回退值</FieldLabel>
+                    <FieldContent>
+                        <Input
+                            value={param.fallback || ''}
+                            onChange={e => onChange(index, { fallback: e.target.value })}
+                            placeholder="${llm.output} / N/A / []"
+                            className="h-8 text-sm"
+                        />
+                    </FieldContent>
+                </Field>
+
+                <p className="w-full text-[11px] text-muted-foreground">
+                    仅在 JSON 解析失败时使用。支持变量表达式或字面量，例如 ${'{'}llm.output{'}'}、N/A、[]。
+                </p>
             </div>
         </div>
     )

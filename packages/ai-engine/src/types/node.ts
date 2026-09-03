@@ -185,6 +185,8 @@ export interface OutputParam {
     name: string
     type: ParamType
     value: string
+    path?: string
+    fallback?: string
     description?: string
 }
 
