@@ -197,7 +197,7 @@ export function WorkflowRunner({ appId, appName, appIcon, inputs }: WorkflowRunn
     return (
         <div className="flex h-screen overflow-hidden">
             {/* Left: Input area */}
-            <div className="flex h-full w-165 shrink-0 flex-col overflow-y-auto border-r bg-white p-8">
+            <div className="flex h-full min-h-0 w-165 shrink-0 flex-col overflow-y-auto border-r bg-white p-8">
                 {/* App title */}
                 <div className="mb-8 flex items-center gap-3">
                     <AppIcon value={appIcon} />
@@ -261,7 +261,7 @@ export function WorkflowRunner({ appId, appName, appIcon, inputs }: WorkflowRunn
             </div>
 
             {/* Right: Execution status */}
-            <div className="flex h-full w-full min-w-0 flex-col overflow-y-auto bg-gradient-to-br from-violet-50 to-blue-50 p-8">
+            <div className="flex h-full min-h-0 min-w-0 flex-1 flex-col overflow-y-auto bg-gradient-to-br from-violet-50 to-blue-50 p-8">
                 <ExecutionPanel execution={execution} />
             </div>
         </div>
