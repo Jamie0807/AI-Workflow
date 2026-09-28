@@ -16,6 +16,7 @@ import {
     DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
+import { navigateToUserSettings, USER_PROFILE_UPDATED_EVENT } from '@/lib/user-settings'
 
 interface User {
     id: string
@@ -52,6 +53,18 @@ export function GlobalHeader() {
         }
 
         fetchUser()
+    }, [])
+
+    useEffect(() => {
+        const handleProfileUpdated = (event: Event) => {
+            const updatedUser = (event as CustomEvent<User>).detail
+            if (updatedUser) {
+                setUser(updatedUser)
+            }
+        }
+
+        window.addEventListener(USER_PROFILE_UPDATED_EVENT, handleProfileUpdated)
+        return () => window.removeEventListener(USER_PROFILE_UPDATED_EVENT, handleProfileUpdated)
     }, [])
 
     const isNavActive = (item: (typeof navItems)[0]) => {
@@ -134,7 +147,7 @@ export function GlobalHeader() {
                                 <DropdownMenuSeparator />
                             </>
                         )}
-                        <DropdownMenuItem>
+                        <DropdownMenuItem onSelect={() => navigateToUserSettings(router)}>
                             <SettingsIcon size={14} className="mr-2" />
                             设置
                         </DropdownMenuItem>
