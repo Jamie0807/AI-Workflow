@@ -4,10 +4,17 @@ import { parseEvaluationDataset } from '../dataset'
 import type { EvaluationMetadata } from '../types'
 
 const metadataFixtures = [
-    { datasetSha256: 'legacy-sha256' },
     { hashStatus: 'computed', datasetSha256: 'computed-sha256' },
     { hashStatus: 'unverified', datasetSha256: 'unverified-sha256' },
 ] as const satisfies readonly EvaluationMetadata[]
+
+const getHashStatus = (metadata: EvaluationMetadata): 'computed' | 'unverified' => {
+    if (metadata.hashStatus === 'computed') {
+        return 'computed'
+    }
+
+    return metadata.hashStatus
+}
 
 describe('parseEvaluationDataset', () => {
     it('parses valid JSONL and preserves line metadata', () => {
@@ -75,7 +82,7 @@ describe('parseEvaluationDataset', () => {
         expect(() => parseEvaluationDataset(sample)).toThrow('duplicate relevant chunk ID')
     })
 
-    it('keeps metadata hash states extensible while accepting the legacy hash shape', () => {
-        expect(metadataFixtures).toHaveLength(3)
+    it('constructs metadata with explicit hash states and narrows them reliably', () => {
+        expect(metadataFixtures.map(getHashStatus)).toEqual(['computed', 'unverified'])
     })
 })

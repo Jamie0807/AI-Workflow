@@ -91,3 +91,44 @@
 
 - 为兼容旧调用，未声明 `hashStatus` 的 metadata 仍被接受；需要区分 hash 状态的后续调用应显式使用 `computed` 或 `unverified`。
 - 原报告记录的 Qdrant 客户端 `1.16.2` 与服务端 `1.18.1` 版本兼容性警告仍存在，本修复未涉及。
+
+## Important finding 修复追加（2026-09-28）
+
+状态：FIXED_WITH_CONCERNS
+
+### 改动
+
+- 删除 `EvaluationMetadata` 中接受仅含 `datasetSha256` 的 legacy 形状，`hashStatus` 现在在 `computed` 与 `unverified` 两个分支中都必填。
+- 将 `dataset.test.ts` 的 metadata fixture 限定为两个显式状态，并增加判别式收窄断言，确保排除 `computed` 后可以可靠得到 `unverified`。
+- 未添加 legacy normalization；本任务没有需要兼容的现有生产调用，后续 Task 5 可直接构造带显式状态的 metadata。
+
+### 修复验证
+
+1. 先修改测试后运行针对性测试：
+
+    `pnpm --filter @ai-workflow/ai-engine test -- src/knowledge/evaluation/__tests__/dataset.test.ts`
+
+    实际结果：退出码 0；1 个测试文件、8 个测试通过。
+
+2. 先修改测试后运行类型检查，验证旧兼容分支会阻止可靠收窄：
+
+    `pnpm --filter @ai-workflow/ai-engine typecheck`
+
+    实际结果：退出码 2；按预期报告 `"unverified" | undefined` 不能赋给 `"computed" | "unverified"`（`dataset.test.ts:16`）。
+
+3. 删除 legacy 兼容分支后重新运行针对性测试：
+
+    `pnpm --filter @ai-workflow/ai-engine test -- src/knowledge/evaluation/__tests__/dataset.test.ts`
+
+    实际结果：退出码 0；1 个测试文件、8 个测试通过。
+
+4. 删除 legacy 兼容分支后运行类型检查：
+
+    `pnpm --filter @ai-workflow/ai-engine typecheck`
+
+    实际结果：退出码 0；`tsc --noEmit` 通过。
+
+### 未解决 concerns
+
+- 原报告记录的 Qdrant 客户端 `1.16.2` 与服务端 `1.18.1` 版本兼容性警告仍存在，本修复未涉及。
+- 本次按复审要求运行了目标测试和包级类型检查，未额外重跑 ai-engine 全量测试。

@@ -21,8 +21,6 @@ interface EvaluationMetadataBase {
 export type EvaluationMetadata =
     | (EvaluationMetadataBase & { hashStatus: 'computed' })
     | (EvaluationMetadataBase & { hashStatus: 'unverified' })
-    /** Keep the original shape assignable for existing callers. */
-    | (EvaluationMetadataBase & { hashStatus?: undefined })
 
 export interface EvaluationDataset {
     samples: Array<EvaluationSample>
