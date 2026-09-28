@@ -1,5 +1,6 @@
 import { QdrantClient } from '@qdrant/js-client-rest'
 
+import type { TextSearchService } from '../retriever/qdrant-fulltext-provider'
 import type { ChunkWithVector, VectorSearchOptions, VectorSearchResult, VectorStoreConfig, VectorStoreService } from '../types'
 import { DEFAULT_VECTOR_STORE_CONFIG } from '../types'
 
@@ -7,7 +8,7 @@ import { DEFAULT_VECTOR_STORE_CONFIG } from '../types'
  * Qdrant 向量存储服务
  * 使用 Qdrant 存储和检索向量
  */
-export class QdrantVectorStore implements VectorStoreService {
+export class QdrantVectorStore implements VectorStoreService, TextSearchService {
     private client: QdrantClient
     private collectionName: string
 
@@ -341,6 +342,6 @@ export class QdrantVectorStore implements VectorStoreService {
 /**
  * 创建 Qdrant 向量存储实例
  */
-export function createQdrantVectorStore(config?: Partial<VectorStoreConfig>): VectorStoreService {
+export function createQdrantVectorStore(config?: Partial<VectorStoreConfig>): QdrantVectorStore {
     return new QdrantVectorStore(config)
 }
