@@ -40,6 +40,9 @@ const createReport = (overrides: Partial<Pick<EvaluationReport, 'metadata' | 'me
     metadata: overrides.metadata ?? createMetadata(),
 })
 
+const createExternalReport = (overrides: { metadata?: unknown; metrics?: unknown } = {}): EvaluationReport =>
+    ({ ...createReport(), ...overrides }) as unknown as EvaluationReport
+
 describe('compareWithBaseline', () => {
     it('passes when current quality metrics equal the baseline', () => {
         const comparison = compareWithBaseline(createReport(), createReport())
@@ -61,7 +64,7 @@ describe('compareWithBaseline', () => {
         const comparison = compareWithBaseline(createReport({ metrics: { recallAtK: baseMetrics.recallAtK - 0.01 } }), createReport())
 
         expect(comparison.passed).toBe(false)
-        expect(comparison.deltas.recallAtK).toBe(-0.01)
+        expect(comparison.deltas.recallAtK).toBe(baseMetrics.recallAtK - 0.01 - baseMetrics.recallAtK)
         expect(comparison.reasons).toContain('recallAtK decreased beyond tolerance')
     })
 
@@ -73,7 +76,7 @@ describe('compareWithBaseline', () => {
         expect(comparison).toMatchObject({
             compatible: true,
             passed: true,
-            deltas: { recallAtK: -0.01 },
+            deltas: { recallAtK: baseMetrics.recallAtK - 0.01 - baseMetrics.recallAtK },
         })
     })
 
@@ -127,11 +130,56 @@ describe('compareWithBaseline', () => {
         )
 
         expect(comparison.deltas).toEqual({
-            precisionAtK: 0.1,
-            recallAtK: -0.1,
-            mrrAtK: 0.05,
-            ndcgAtK: -0.05,
+            precisionAtK: 0.9 - 0.8,
+            recallAtK: 0.6 - 0.7,
+            mrrAtK: 0.65 - 0.6,
+            ndcgAtK: 0.45 - 0.5,
         })
         expect(comparison.passed).toBe(false)
+    })
+
+    it.each([
+        ['null metadata', null],
+        ['string metadata', 'metadata'],
+        ['missing dataset hash', { ...createMetadata(), datasetSha256: undefined }],
+        ['invalid hash status', { ...createMetadata(), hashStatus: 'invalid' }],
+    ])('rejects %s without throwing', (_description, metadata) => {
+        expect(() => compareWithBaseline(createExternalReport({ metadata }), createReport())).not.toThrow()
+
+        const comparison = compareWithBaseline(createExternalReport({ metadata }), createReport())
+
+        expect(comparison.compatible).toBe(false)
+        expect(comparison.passed).toBe(false)
+        expect(comparison.reasons.some(reason => reason.includes('metadata'))).toBe(true)
+    })
+
+    it.each([
+        ['empty metrics', {}],
+        ['missing metric', { precisionAtK: baseMetrics.precisionAtK }],
+        ['non-finite metric', { ...baseMetrics, mrrAtK: Number.NaN }],
+    ])('rejects %s on both reports with a structured failure', (_description, metrics) => {
+        for (const side of ['current', 'baseline'] as const) {
+            const current = side === 'current' ? createExternalReport({ metrics }) : createReport()
+            const baseline = side === 'baseline' ? createExternalReport({ metrics }) : createReport()
+            const comparison = compareWithBaseline(current, baseline)
+
+            expect(comparison.compatible).toBe(false)
+            expect(comparison.passed).toBe(false)
+            expect(
+                comparison.reasons.some(
+                    reason => reason.includes(`${side} metrics`) && (reason.includes('malformed') || reason.includes('missing metric'))
+                )
+            ).toBe(true)
+        }
+    })
+
+    it('preserves a tiny negative delta instead of rounding it to zero', () => {
+        const currentRecall = baseMetrics.recallAtK - 1e-13
+        const comparison = compareWithBaseline(createReport({ metrics: { recallAtK: currentRecall } }), createReport())
+
+        expect(comparison.deltas.recallAtK).toBe(currentRecall - baseMetrics.recallAtK)
+        expect(comparison.deltas.recallAtK).toBeLessThan(0)
+        expect(comparison.passed).toBe(false)
+        expect(comparison.reasons).toContain('recallAtK decreased beyond tolerance')
     })
 })
