@@ -44,10 +44,18 @@ export interface RetrievalEvaluationConfig {
     vectorWeight?: number
 }
 
+export type RetrievalEvaluationInput = Omit<RetrievalEvaluationConfig, 'knowledgeBaseIds'>
+
+export interface RetrievedQueryResult {
+    chunkId: string
+    score: number
+}
+
 export interface QueryEvaluation {
     sampleId: string
     query: string
     retrievedChunkIds: Array<string>
+    retrievedResults: Array<RetrievedQueryResult>
     metrics: Record<string, number>
     latencyMs: number
 }
