@@ -84,7 +84,7 @@ function calculateStableAverage(metrics: readonly RankingMetrics[], field: keyof
         }
     }
 
-    const average = scale === 0 ? 0 : (scale / metrics.length) * scaledSum
+    const average = scale === 0 ? 0 : scale * (scaledSum / metrics.length)
     if (!Number.isFinite(average)) {
         throw new Error(`aggregated ${field} must be finite`)
     }

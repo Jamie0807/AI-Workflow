@@ -131,3 +131,31 @@
     结果：退出码 0；`tsc --noEmit` 通过。
 
 本次修复仅修改上述实现、测试和本报告；`.superpowers/sdd/artifacts/` 下原有未跟踪文件未加入提交。原报告中记录的 Qdrant 客户端/服务端版本兼容性 warning 未因本修复改变。
+
+## Task 2 复审剩余问题修复（2026-09-28）
+
+复审 finding：极值回归只有两个相同的 `Number.MAX_VALUE` 指标；三个输入时旧实现的 `(scale / metrics.length) * scaledSum` 会在最终乘法中溢出为 `Infinity`。
+
+### 红测
+
+将极值回归扩展为三个相同的 `Number.MAX_VALUE` `RankingMetrics` 后运行：
+
+`pnpm --filter @ai-workflow/ai-engine test -- src/knowledge/evaluation/__tests__/metrics.test.ts`
+
+结果：退出码 1；19 个测试中 18 个通过、极值用例失败，并抛出 `aggregated precisionAtK must be finite`，确认旧实现的问题。
+
+### 修复与验证
+
+- `packages/ai-engine/src/knowledge/evaluation/__tests__/metrics.test.ts`
+    - 极值回归现在使用三个相同的 `Number.MAX_VALUE` `RankingMetrics`。
+- `packages/ai-engine/src/knowledge/evaluation/metrics.ts`
+    - 最终计算改为先计算 `scaledSum / metrics.length`，再乘以 `scale`。
+    - 保留非有限输入和聚合输出拒绝逻辑。
+
+1. `pnpm --filter @ai-workflow/ai-engine test -- src/knowledge/evaluation/__tests__/metrics.test.ts`
+
+    结果：退出码 0；1 个测试文件、19/19 个测试通过。
+
+2. `pnpm --filter @ai-workflow/ai-engine typecheck`
+
+    结果：退出码 0；`tsc --noEmit` 通过。

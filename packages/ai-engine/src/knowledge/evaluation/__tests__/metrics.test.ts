@@ -117,6 +117,7 @@ describe('aggregateRankingMetrics', () => {
         const aggregated = aggregateRankingMetrics([
             { precisionAtK: Number.MAX_VALUE, recallAtK: Number.MAX_VALUE, mrrAtK: Number.MAX_VALUE, ndcgAtK: Number.MAX_VALUE },
             { precisionAtK: Number.MAX_VALUE, recallAtK: Number.MAX_VALUE, mrrAtK: Number.MAX_VALUE, ndcgAtK: Number.MAX_VALUE },
+            { precisionAtK: Number.MAX_VALUE, recallAtK: Number.MAX_VALUE, mrrAtK: Number.MAX_VALUE, ndcgAtK: Number.MAX_VALUE },
         ])
 
         expect(Object.values(aggregated).every(value => Number.isFinite(value))).toBe(true)
