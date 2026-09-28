@@ -4,8 +4,22 @@ import { parseEvaluationDataset } from '../dataset'
 import type { EvaluationMetadata } from '../types'
 
 const metadataFixtures = [
-    { hashStatus: 'computed', datasetSha256: 'computed-sha256' },
-    { hashStatus: 'unverified', datasetSha256: 'unverified-sha256' },
+    {
+        hashStatus: 'computed',
+        datasetSha256: 'computed-sha256',
+        topK: 5,
+        mode: 'vector',
+        knowledgeBaseIds: ['kb-1'],
+        retrievalConfig: { threshold: 0.2, vectorWeight: 1 },
+    },
+    {
+        hashStatus: 'unverified',
+        datasetSha256: 'unverified-sha256',
+        topK: 5,
+        mode: 'vector',
+        knowledgeBaseIds: ['kb-1'],
+        retrievalConfig: { threshold: 0.2, vectorWeight: 1 },
+    },
 ] as const satisfies readonly EvaluationMetadata[]
 
 const getHashStatus = (metadata: EvaluationMetadata): 'computed' | 'unverified' => {

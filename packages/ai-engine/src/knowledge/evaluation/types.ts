@@ -27,9 +27,28 @@ interface EvaluationMetadataBase {
     datasetSha256: string
 }
 
+export type JsonValue = string | number | boolean | null | JsonValue[] | { readonly [key: string]: JsonValue }
+
+export interface EvaluationRetrievalConfig {
+    threshold: number | null
+    vectorWeight: number | null
+    [key: string]: JsonValue
+}
+
+export type RetrievalConfig = EvaluationRetrievalConfig
+
+export interface EvaluationMetadataContext {
+    topK: number
+    mode: RetrievalMode
+    knowledgeBaseIds: Array<string>
+    retrievalConfig: EvaluationRetrievalConfig
+}
+
+type EvaluationMetadataWithContext = EvaluationMetadataBase & EvaluationMetadataContext
+
 export type EvaluationMetadata =
-    | (EvaluationMetadataBase & { hashStatus: 'computed' })
-    | (EvaluationMetadataBase & { hashStatus: 'unverified' })
+    | (EvaluationMetadataWithContext & { hashStatus: 'computed' })
+    | (EvaluationMetadataWithContext & { hashStatus: 'unverified' })
 
 export interface EvaluationDataset {
     samples: Array<EvaluationSample>

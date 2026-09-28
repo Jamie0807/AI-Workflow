@@ -1,0 +1,137 @@
+// cspell:ignore ndcg
+
+import { describe, expect, it } from 'vitest'
+
+import { compareWithBaseline } from '../baseline'
+import type { EvaluationMetadata, EvaluationReport, RankingMetrics } from '../types'
+
+const baseMetrics: RankingMetrics = {
+    precisionAtK: 0.8,
+    recallAtK: 0.7,
+    mrrAtK: 0.6,
+    ndcgAtK: 0.5,
+}
+
+const createMetadata = (): EvaluationMetadata => ({
+    hashStatus: 'computed',
+    datasetSha256: 'dataset-sha256',
+    topK: 5,
+    mode: 'hybrid',
+    knowledgeBaseIds: ['kb-1', 'kb-2'],
+    retrievalConfig: {
+        threshold: 0.2,
+        vectorWeight: 0.7,
+    },
+})
+
+const createReport = (overrides: Partial<Pick<EvaluationReport, 'metadata' | 'metrics' | 'latencyMs'>> = {}): EvaluationReport => ({
+    mode: 'hybrid',
+    config: {
+        mode: 'hybrid',
+        topK: 5,
+        knowledgeBaseIds: ['kb-1', 'kb-2'],
+        threshold: 0.2,
+        vectorWeight: 0.7,
+    },
+    sampleCount: 2,
+    metrics: { ...baseMetrics, ...overrides.metrics },
+    latencyMs: overrides.latencyMs ?? { p50: 20, p95: 40 },
+    queries: [],
+    metadata: overrides.metadata ?? createMetadata(),
+})
+
+describe('compareWithBaseline', () => {
+    it('passes when current quality metrics equal the baseline', () => {
+        const comparison = compareWithBaseline(createReport(), createReport())
+
+        expect(comparison).toEqual({
+            compatible: true,
+            passed: true,
+            deltas: {
+                precisionAtK: 0,
+                recallAtK: 0,
+                mrrAtK: 0,
+                ndcgAtK: 0,
+            },
+            reasons: [],
+        })
+    })
+
+    it('fails when recall drops beyond the default zero tolerance', () => {
+        const comparison = compareWithBaseline(createReport({ metrics: { recallAtK: baseMetrics.recallAtK - 0.01 } }), createReport())
+
+        expect(comparison.passed).toBe(false)
+        expect(comparison.deltas.recallAtK).toBe(-0.01)
+        expect(comparison.reasons).toContain('recallAtK decreased beyond tolerance')
+    })
+
+    it('passes when recall drops within the configured tolerance', () => {
+        const comparison = compareWithBaseline(createReport({ metrics: { recallAtK: baseMetrics.recallAtK - 0.01 } }), createReport(), {
+            recallAtK: 0.02,
+        })
+
+        expect(comparison).toMatchObject({
+            compatible: true,
+            passed: true,
+            deltas: { recallAtK: -0.01 },
+        })
+    })
+
+    it.each([
+        ['datasetSha256', { datasetSha256: 'different-dataset-sha256' }],
+        ['topK', { topK: 10 }],
+        ['mode', { mode: 'vector' }],
+        ['knowledgeBaseIds', { knowledgeBaseIds: ['kb-3'] }],
+        ['retrievalConfig', { retrievalConfig: { threshold: 0.4, vectorWeight: 0.7 } }],
+    ])('rejects comparison when %s is incompatible', (field, metadataChange) => {
+        const currentMetadata = { ...createMetadata(), ...metadataChange } as EvaluationMetadata
+        const comparison = compareWithBaseline(createReport({ metadata: currentMetadata }), createReport())
+
+        expect(comparison.compatible).toBe(false)
+        expect(comparison.passed).toBe(false)
+        expect(comparison.reasons).toContain(`metadata.${String(field)} differs`)
+    })
+
+    it('does not let latency changes affect the quality gate', () => {
+        const comparison = compareWithBaseline(
+            createReport({ latencyMs: { p50: 200, p95: 900 } }),
+            createReport({ latencyMs: { p50: 20, p95: 40 } })
+        )
+
+        expect(comparison.passed).toBe(true)
+    })
+
+    it('compares retrieval config by value instead of object insertion order', () => {
+        const currentMetadata = {
+            ...createMetadata(),
+            retrievalConfig: {
+                vectorWeight: 0.7,
+                threshold: 0.2,
+            },
+        } as EvaluationMetadata
+
+        expect(compareWithBaseline(createReport({ metadata: currentMetadata }), createReport()).passed).toBe(true)
+    })
+
+    it('returns current minus baseline for all four quality metrics', () => {
+        const comparison = compareWithBaseline(
+            createReport({
+                metrics: {
+                    precisionAtK: 0.9,
+                    recallAtK: 0.6,
+                    mrrAtK: 0.65,
+                    ndcgAtK: 0.45,
+                },
+            }),
+            createReport()
+        )
+
+        expect(comparison.deltas).toEqual({
+            precisionAtK: 0.1,
+            recallAtK: -0.1,
+            mrrAtK: 0.05,
+            ndcgAtK: -0.05,
+        })
+        expect(comparison.passed).toBe(false)
+    })
+})
