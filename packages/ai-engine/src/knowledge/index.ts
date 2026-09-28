@@ -13,3 +13,6 @@ export { QdrantVectorStore, createQdrantVectorStore } from './store'
 // 检索器
 export { VectorRetriever, createVectorRetriever, HybridRetriever, createHybridRetriever } from './retriever'
 export type { FulltextSearchProvider } from './retriever'
+
+// 评测
+export * from './evaluation'
