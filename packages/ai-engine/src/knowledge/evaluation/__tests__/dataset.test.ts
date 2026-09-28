@@ -1,6 +1,13 @@
 import { describe, expect, it } from 'vitest'
 
 import { parseEvaluationDataset } from '../dataset'
+import type { EvaluationMetadata } from '../types'
+
+const metadataFixtures = [
+    { datasetSha256: 'legacy-sha256' },
+    { hashStatus: 'computed', datasetSha256: 'computed-sha256' },
+    { hashStatus: 'unverified', datasetSha256: 'unverified-sha256' },
+] as const satisfies readonly EvaluationMetadata[]
 
 describe('parseEvaluationDataset', () => {
     it('parses valid JSONL and preserves line metadata', () => {
@@ -35,7 +42,26 @@ describe('parseEvaluationDataset', () => {
         expect(() => parseEvaluationDataset(JSON.stringify(sample))).toThrow()
     })
 
-    it('rejects duplicate sample IDs and duplicate relevant chunk IDs', () => {
+    it('rejects duplicate sample IDs when their chunk IDs are distinct', () => {
+        const samples = [
+            {
+                id: 'q-1',
+                query: '登录',
+                knowledgeBaseId: 'kb-1',
+                relevantChunks: [{ chunkId: 'c-1', relevance: 1 }],
+            },
+            {
+                id: 'q-1',
+                query: '退出',
+                knowledgeBaseId: 'kb-1',
+                relevantChunks: [{ chunkId: 'c-2', relevance: 3 }],
+            },
+        ]
+
+        expect(() => parseEvaluationDataset(samples.map(sample => JSON.stringify(sample)).join('\n'))).toThrow('duplicate sample ID')
+    })
+
+    it('rejects duplicate relevant chunk IDs within a sample with a unique sample ID', () => {
         const sample = JSON.stringify({
             id: 'q-1',
             query: '登录',
@@ -45,6 +71,11 @@ describe('parseEvaluationDataset', () => {
                 { chunkId: 'c-1', relevance: 3 },
             ],
         })
-        expect(() => parseEvaluationDataset([sample, sample].join('\n'))).toThrow(/duplicate/i)
+
+        expect(() => parseEvaluationDataset(sample)).toThrow('duplicate relevant chunk ID')
+    })
+
+    it('keeps metadata hash states extensible while accepting the legacy hash shape', () => {
+        expect(metadataFixtures).toHaveLength(3)
     })
 })

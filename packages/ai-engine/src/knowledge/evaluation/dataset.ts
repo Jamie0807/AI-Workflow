@@ -1,5 +1,7 @@
 import type { EvaluationDataset, EvaluationSample, Relevance, RelevantChunk } from './types'
 
+const ALLOWED_RELEVANCES = [1, 2, 3] as const satisfies readonly Relevance[]
+
 function isRecord(value: unknown): value is Record<string, unknown> {
     return typeof value === 'object' && value !== null && !Array.isArray(value)
 }
@@ -9,7 +11,7 @@ function isPositiveInteger(value: unknown): value is number {
 }
 
 function isRelevance(value: unknown): value is Relevance {
-    return isPositiveInteger(value) && (value === 1 || value === 2 || value === 3)
+    return isPositiveInteger(value) && ALLOWED_RELEVANCES.some(relevance => relevance === value)
 }
 
 function invalidSample(lineNumber: number, reason: string): never {
