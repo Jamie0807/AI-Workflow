@@ -1,3 +1,5 @@
+// cspell:ignore ndcg
+
 import type { RetrievalMode } from '../types'
 
 export type Relevance = 1 | 2 | 3
@@ -5,6 +7,13 @@ export type Relevance = 1 | 2 | 3
 export interface RelevantChunk {
     chunkId: string
     relevance: Relevance
+}
+
+export interface RankingMetrics {
+    precisionAtK: number
+    recallAtK: number
+    mrrAtK: number
+    ndcgAtK: number
 }
 
 export interface EvaluationSample {
