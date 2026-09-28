@@ -65,27 +65,42 @@ export function calculateRankingMetrics(
     }
 }
 
+function calculateStableAverage(metrics: readonly RankingMetrics[], field: keyof RankingMetrics): number {
+    let scale = 0
+    let scaledSum = 0
+
+    for (const metric of metrics) {
+        const value = metric[field]
+        if (!Number.isFinite(value)) {
+            throw new Error(`metric ${field} must be finite`)
+        }
+
+        const magnitude = Math.abs(value)
+        if (magnitude > scale) {
+            scaledSum = scale === 0 ? value / magnitude : scaledSum * (scale / magnitude) + value / magnitude
+            scale = magnitude
+        } else if (scale > 0) {
+            scaledSum += value / scale
+        }
+    }
+
+    const average = scale === 0 ? 0 : (scale / metrics.length) * scaledSum
+    if (!Number.isFinite(average)) {
+        throw new Error(`aggregated ${field} must be finite`)
+    }
+
+    return average
+}
+
 export function aggregateRankingMetrics(metrics: readonly RankingMetrics[]): RankingMetrics {
     if (metrics.length === 0) {
         throw new Error('metrics must not be empty')
     }
 
-    let precisionAtK = 0
-    let recallAtK = 0
-    let mrrAtK = 0
-    let ndcgAtK = 0
-
-    for (const metric of metrics) {
-        precisionAtK += metric.precisionAtK
-        recallAtK += metric.recallAtK
-        mrrAtK += metric.mrrAtK
-        ndcgAtK += metric.ndcgAtK
-    }
-
     return {
-        precisionAtK: precisionAtK / metrics.length,
-        recallAtK: recallAtK / metrics.length,
-        mrrAtK: mrrAtK / metrics.length,
-        ndcgAtK: ndcgAtK / metrics.length,
+        precisionAtK: calculateStableAverage(metrics, 'precisionAtK'),
+        recallAtK: calculateStableAverage(metrics, 'recallAtK'),
+        mrrAtK: calculateStableAverage(metrics, 'mrrAtK'),
+        ndcgAtK: calculateStableAverage(metrics, 'ndcgAtK'),
     }
 }

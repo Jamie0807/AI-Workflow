@@ -103,3 +103,31 @@
 - 全量 ai-engine 测试仍输出 Qdrant 客户端 `1.16.2` 与服务端 `1.18.1` 的版本兼容性警告；测试通过，本任务未修改依赖或 Qdrant 配置。
 - CSpell 默认不认识 `ndcg`/`idcg`，因此为了让仓库提交钩子通过，在本任务允许修改的 3 个文件内加入了局部忽略声明；未修改全局词典或其他文件。
 - `.superpowers/sdd/artifacts/` 下原有未跟踪文件保持不变，未纳入 commit。
+
+## Task 2 审查修复追加（2026-09-28）
+
+审查 finding：`aggregateRankingMetrics` 原先先累加各字段再除以指标数量；两个有限的 `Number.MAX_VALUE` 相加会溢出为 `Infinity`，因此违反 `RankingMetrics` 字段必须为有限 number 的约束。
+
+### 修复内容
+
+- `packages/ai-engine/src/knowledge/evaluation/metrics.ts`
+    - 新增按当前最大绝对值缩放的稳定平均实现，避免先累加未缩放的极值。
+    - 对每个输入字段使用 `Number.isFinite` 校验；非有限输入抛出包含字段名的明确错误。
+    - 对每个聚合结果再次校验有限性；若仍为非有限值，抛出包含字段名的明确错误。
+    - 保持原有 0..1 指标的等权宏平均公式和结果不变。
+- `packages/ai-engine/src/knowledge/evaluation/__tests__/metrics.test.ts`
+    - 新增两个所有字段均为 `Number.MAX_VALUE` 的有限 `RankingMetrics` 回归测试，断言聚合结果所有字段均为有限值。
+    - 新增 `NaN`、正无穷和负无穷输入的明确错误测试。
+
+### 实际验证结果
+
+1. 回归测试先在旧实现上按预期失败：极值用例得到非有限结果，非有限输入未抛错。
+2. `pnpm --filter @ai-workflow/ai-engine test -- src/knowledge/evaluation/__tests__/metrics.test.ts`
+
+    结果：退出码 0；1 个测试文件、19/19 个测试通过。
+
+3. `pnpm --filter @ai-workflow/ai-engine typecheck`
+
+    结果：退出码 0；`tsc --noEmit` 通过。
+
+本次修复仅修改上述实现、测试和本报告；`.superpowers/sdd/artifacts/` 下原有未跟踪文件未加入提交。原报告中记录的 Qdrant 客户端/服务端版本兼容性 warning 未因本修复改变。

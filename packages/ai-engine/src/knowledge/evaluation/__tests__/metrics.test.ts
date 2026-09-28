@@ -113,6 +113,21 @@ describe('aggregateRankingMetrics', () => {
         })
     })
 
+    it('keeps averages of extreme finite metrics finite', () => {
+        const aggregated = aggregateRankingMetrics([
+            { precisionAtK: Number.MAX_VALUE, recallAtK: Number.MAX_VALUE, mrrAtK: Number.MAX_VALUE, ndcgAtK: Number.MAX_VALUE },
+            { precisionAtK: Number.MAX_VALUE, recallAtK: Number.MAX_VALUE, mrrAtK: Number.MAX_VALUE, ndcgAtK: Number.MAX_VALUE },
+        ])
+
+        expect(Object.values(aggregated).every(value => Number.isFinite(value))).toBe(true)
+    })
+
+    it.each([Number.NaN, Number.POSITIVE_INFINITY, Number.NEGATIVE_INFINITY])('rejects non-finite metric input: %s', invalidValue => {
+        expect(() => aggregateRankingMetrics([{ precisionAtK: invalidValue, recallAtK: 0, mrrAtK: 0, ndcgAtK: 0 }])).toThrow(
+            'metric precisionAtK must be finite'
+        )
+    })
+
     it('rejects an empty metric set', () => {
         expect(() => aggregateRankingMetrics([])).toThrow('metrics must not be empty')
     })
