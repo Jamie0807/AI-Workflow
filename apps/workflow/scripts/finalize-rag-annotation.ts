@@ -1,6 +1,6 @@
 import { execFile } from 'node:child_process'
 import { createHash, randomUUID } from 'node:crypto'
-import { mkdir, readFile, rename, unlink, writeFile } from 'node:fs/promises'
+import { access, mkdir, readFile, rename, unlink, writeFile } from 'node:fs/promises'
 import { dirname, isAbsolute, resolve } from 'node:path'
 import { pathToFileURL } from 'node:url'
 import { promisify } from 'node:util'
@@ -19,6 +19,12 @@ export interface FinalizeAnnotationCliOptions {
     annotator: string
     reviewedAt: string
 }
+
+export interface FinalizeAnnotationRuntimeDependencies {
+    rename: typeof rename
+}
+
+const DEFAULT_FINALIZE_RUNTIME: FinalizeAnnotationRuntimeDependencies = { rename }
 
 const HELP_TEXT = `Usage:
   pnpm --filter @ai-workflow/workflow finalize:rag-annotation -- \
@@ -167,6 +173,22 @@ function resolveWorkspacePath(inputPath: string, workspaceRoot: string): string 
     return isAbsolute(inputPath) ? inputPath : resolve(workspaceRoot, inputPath)
 }
 
+async function pathExists(path: string): Promise<boolean> {
+    try {
+        await access(path)
+        return true
+    } catch (error) {
+        if (isRecord(error) && error.code === 'ENOENT') {
+            return false
+        }
+        throw error
+    }
+}
+
+async function removeIfPresent(path: string): Promise<void> {
+    await unlink(path).catch(() => undefined)
+}
+
 async function readReviewFile(reviewPath: string): Promise<AnnotationReview[]> {
     let reviewText: string
     try {
@@ -247,24 +269,67 @@ function buildReviewedManifest(
     }
 }
 
-async function writeAtomicOutputs(datasetPath: string, datasetText: string, manifestPath: string, manifestText: string): Promise<void> {
+export async function writeAtomicOutputs(
+    datasetPath: string,
+    datasetText: string,
+    manifestPath: string,
+    manifestText: string,
+    renameFile: typeof rename = rename
+): Promise<void> {
     await mkdir(dirname(datasetPath), { recursive: true })
     await mkdir(dirname(manifestPath), { recursive: true })
 
     const datasetTempPath = `${datasetPath}.${randomUUID()}.tmp`
     const manifestTempPath = `${manifestPath}.${randomUUID()}.tmp`
+    const datasetBackupPath = `${datasetPath}.${randomUUID()}.bak`
+    const manifestBackupPath = `${manifestPath}.${randomUUID()}.bak`
+    let datasetBackupCreated = false
+    let manifestBackupCreated = false
+    let datasetPublished = false
+    let manifestPublished = false
+
     try {
+        if (await pathExists(datasetPath)) {
+            await renameFile(datasetPath, datasetBackupPath)
+            datasetBackupCreated = true
+        }
+        if (await pathExists(manifestPath)) {
+            await renameFile(manifestPath, manifestBackupPath)
+            manifestBackupCreated = true
+        }
+
         await writeFile(datasetTempPath, datasetText, 'utf8')
         await writeFile(manifestTempPath, manifestText, 'utf8')
-        await rename(datasetTempPath, datasetPath)
-        await rename(manifestTempPath, manifestPath)
+        await renameFile(datasetTempPath, datasetPath)
+        datasetPublished = true
+        await renameFile(manifestTempPath, manifestPath)
+        manifestPublished = true
+    } catch (error) {
+        if (datasetPublished || datasetBackupCreated) {
+            await removeIfPresent(datasetPath)
+        }
+        if (manifestPublished || manifestBackupCreated) {
+            await removeIfPresent(manifestPath)
+        }
+        if (datasetBackupCreated) {
+            await renameFile(datasetBackupPath, datasetPath).catch(() => undefined)
+        }
+        if (manifestBackupCreated) {
+            await renameFile(manifestBackupPath, manifestPath).catch(() => undefined)
+        }
+        throw error
     } finally {
-        await unlink(datasetTempPath).catch(() => undefined)
-        await unlink(manifestTempPath).catch(() => undefined)
+        await removeIfPresent(datasetTempPath)
+        await removeIfPresent(manifestTempPath)
+        await removeIfPresent(datasetBackupPath)
+        await removeIfPresent(manifestBackupPath)
     }
 }
 
-export async function main(argv: readonly string[] = process.argv.slice(2)): Promise<number> {
+export async function main(
+    argv: readonly string[] = process.argv.slice(2),
+    runtime: FinalizeAnnotationRuntimeDependencies = DEFAULT_FINALIZE_RUNTIME
+): Promise<number> {
     if (argv.includes('--help')) {
         process.stdout.write(HELP_TEXT)
         return 0
@@ -301,7 +366,7 @@ export async function main(argv: readonly string[] = process.argv.slice(2)): Pro
         const datasetText = serializeDataset(dataset)
         const datasetSha256 = createHash('sha256').update(datasetText, 'utf8').digest('hex')
         const reviewedManifest = buildReviewedManifest(manifest, options.annotator, options.reviewedAt, datasetSha256)
-        await writeAtomicOutputs(datasetPath, datasetText, manifestPath, `${JSON.stringify(reviewedManifest, null, 2)}\n`)
+        await writeAtomicOutputs(datasetPath, datasetText, manifestPath, `${JSON.stringify(reviewedManifest, null, 2)}\n`, runtime.rename)
 
         process.stdout.write(`[finalize:rag-annotation] wrote ${datasetPath}\n`)
         process.stdout.write(`[finalize:rag-annotation] updated ${manifestPath}\n`)

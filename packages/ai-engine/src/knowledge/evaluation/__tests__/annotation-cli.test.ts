@@ -1,11 +1,10 @@
-import { createHash } from 'node:crypto'
-import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises'
+import { mkdtemp, readdir, readFile, rename as renameFile, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 
 import { describe, expect, it, vi } from 'vitest'
 
-import { main as finalizeMain } from '../../../../../../apps/workflow/scripts/finalize-rag-annotation'
+import { main as finalizeMain, writeAtomicOutputs } from '../../../../../../apps/workflow/scripts/finalize-rag-annotation'
 import {
     type AnnotationCorpusChunk,
     type AnnotationRuntimeDependencies,
@@ -100,6 +99,21 @@ function annotationReview(overrides: Partial<AnnotationReview> = {}): Annotation
         ],
         ...overrides,
     }
+}
+
+async function readIfPresent(path: string): Promise<string | undefined> {
+    try {
+        return await readFile(path, 'utf8')
+    } catch (error) {
+        if (typeof error === 'object' && error !== null && 'code' in error && error.code === 'ENOENT') {
+            return undefined
+        }
+        throw error
+    }
+}
+
+function finalizeArgs(reviewPath: string, manifestPath: string, datasetPath: string): string[] {
+    return ['--review', reviewPath, '--manifest', manifestPath, '--dataset', datasetPath, '--annotator', 'project-owner']
 }
 
 describe('prepare-rag-annotation CLI', () => {
@@ -348,6 +362,15 @@ describe('prepare-rag-annotation CLI', () => {
 })
 
 describe('finalize-rag-annotation CLI', () => {
+    it.each([
+        ['--manifest', 'manifest.json', '--dataset', 'dataset.jsonl', '--annotator', 'project-owner'],
+        ['--review', 'review.jsonl', '--manifest', 'manifest.json', '--dataset', 'dataset.jsonl'],
+        ['--review', 'review.jsonl', '--manifest', 'manifest.json', '--annotator', 'project-owner'],
+        ['--review', 'review.jsonl', '--dataset', 'dataset.jsonl', '--annotator', 'project-owner'],
+    ])('requires all four input options: %s', async (...argv: string[]) => {
+        await expect(finalizeMain(argv)).resolves.toBe(2)
+    })
+
     it('fails with exit code 2 when any human decision is null', async () => {
         const tempRoot = await mkdtemp(join(tmpdir(), 'rag-annotation-finalize-'))
         const reviewPath = join(tempRoot, 'review.jsonl')
@@ -372,48 +395,151 @@ describe('finalize-rag-annotation CLI', () => {
         }
     })
 
-    it('writes only non-zero relevance labels and atomically records the dataset hash', async () => {
+    it('rejects a non-zero relevance label without rationale and leaves output files unchanged', async () => {
         const tempRoot = await mkdtemp(join(tmpdir(), 'rag-annotation-finalize-'))
         const reviewPath = join(tempRoot, 'review.jsonl')
         const manifestPath = join(tempRoot, 'manifest.json')
         const datasetPath = join(tempRoot, 'dataset.jsonl')
-        const reviewText = `${JSON.stringify(annotationReview())}\n`
+        const manifestText = `${JSON.stringify(annotationManifest(), null, 2)}\n`
+        const datasetText = 'old dataset\n'
+        const review = annotationReview({
+            candidates: annotationReview().candidates.map((candidate, index) =>
+                index === 0 ? { ...candidate, rationale: '   ' } : candidate
+            ),
+        })
+
+        try {
+            await writeFile(reviewPath, `${JSON.stringify(review)}\n`, 'utf8')
+            await writeFile(manifestPath, manifestText, 'utf8')
+            await writeFile(datasetPath, datasetText, 'utf8')
+
+            await expect(finalizeMain(finalizeArgs(reviewPath, manifestPath, datasetPath))).resolves.toBe(2)
+            expect(await readFile(datasetPath, 'utf8')).toBe(datasetText)
+            expect(await readFile(manifestPath, 'utf8')).toBe(manifestText)
+        } finally {
+            await rm(tempRoot, { recursive: true, force: true })
+        }
+    })
+
+    it('rejects a review with only zero relevance labels and leaves output files unchanged', async () => {
+        const tempRoot = await mkdtemp(join(tmpdir(), 'rag-annotation-finalize-'))
+        const reviewPath = join(tempRoot, 'review.jsonl')
+        const manifestPath = join(tempRoot, 'manifest.json')
+        const datasetPath = join(tempRoot, 'dataset.jsonl')
+        const manifestText = `${JSON.stringify(annotationManifest(), null, 2)}\n`
+        const datasetText = 'old dataset\n'
+        const review = annotationReview({
+            candidates: annotationReview().candidates.map(candidate => ({ ...candidate, humanRelevance: 0, rationale: '' })),
+        })
+
+        try {
+            await writeFile(reviewPath, `${JSON.stringify(review)}\n`, 'utf8')
+            await writeFile(manifestPath, manifestText, 'utf8')
+            await writeFile(datasetPath, datasetText, 'utf8')
+
+            await expect(finalizeMain(finalizeArgs(reviewPath, manifestPath, datasetPath))).resolves.toBe(2)
+            expect(await readFile(datasetPath, 'utf8')).toBe(datasetText)
+            expect(await readFile(manifestPath, 'utf8')).toBe(manifestText)
+        } finally {
+            await rm(tempRoot, { recursive: true, force: true })
+        }
+    })
+
+    it('rejects duplicate candidates and leaves output files unchanged', async () => {
+        const tempRoot = await mkdtemp(join(tmpdir(), 'rag-annotation-finalize-'))
+        const reviewPath = join(tempRoot, 'review.jsonl')
+        const manifestPath = join(tempRoot, 'manifest.json')
+        const datasetPath = join(tempRoot, 'dataset.jsonl')
+        const manifestText = `${JSON.stringify(annotationManifest(), null, 2)}\n`
+        const datasetText = 'old dataset\n'
+        const review = annotationReview({ candidates: [annotationReview().candidates[0]!] })
+
+        try {
+            const duplicateReview = { ...review, candidates: [review.candidates[0], review.candidates[0]] }
+            await writeFile(reviewPath, `${JSON.stringify(duplicateReview)}\n`, 'utf8')
+            await writeFile(manifestPath, manifestText, 'utf8')
+            await writeFile(datasetPath, datasetText, 'utf8')
+
+            await expect(finalizeMain(finalizeArgs(reviewPath, manifestPath, datasetPath))).resolves.toBe(2)
+            expect(await readFile(datasetPath, 'utf8')).toBe(datasetText)
+            expect(await readFile(manifestPath, 'utf8')).toBe(manifestText)
+        } finally {
+            await rm(tempRoot, { recursive: true, force: true })
+        }
+    })
+
+    it('rejects a candidate-level Knowledge Base mismatch and leaves output files unchanged', async () => {
+        const tempRoot = await mkdtemp(join(tmpdir(), 'rag-annotation-finalize-'))
+        const reviewPath = join(tempRoot, 'review.jsonl')
+        const manifestPath = join(tempRoot, 'manifest.json')
+        const datasetPath = join(tempRoot, 'dataset.jsonl')
+        const manifestText = `${JSON.stringify(annotationManifest(), null, 2)}\n`
+        const datasetText = 'old dataset\n'
+        const review = annotationReview({
+            candidates: annotationReview().candidates.map((candidate, index) =>
+                index === 0 ? { ...candidate, knowledgeBaseId: 'other-kb' } : candidate
+            ),
+        })
+
+        try {
+            await writeFile(reviewPath, `${JSON.stringify(review)}\n`, 'utf8')
+            await writeFile(manifestPath, manifestText, 'utf8')
+            await writeFile(datasetPath, datasetText, 'utf8')
+
+            await expect(finalizeMain(finalizeArgs(reviewPath, manifestPath, datasetPath))).resolves.toBe(2)
+            expect(await readFile(datasetPath, 'utf8')).toBe(datasetText)
+            expect(await readFile(manifestPath, 'utf8')).toBe(manifestText)
+        } finally {
+            await rm(tempRoot, { recursive: true, force: true })
+        }
+    })
+
+    it('writes multiple JSONL samples with a stable dataset hash', async () => {
+        const tempRoot = await mkdtemp(join(tmpdir(), 'rag-annotation-finalize-'))
+        const reviewPath = join(tempRoot, 'review.jsonl')
+        const manifestPath = join(tempRoot, 'manifest.json')
+        const datasetPath = join(tempRoot, 'dataset.jsonl')
+        const reviews = [annotationReview(), annotationReview({ id: 'query-2', query: '另一个问题' })]
+        const reviewText = `${reviews.map(review => JSON.stringify(review)).join('\n')}\n`
 
         try {
             await writeFile(reviewPath, reviewText, 'utf8')
-            await writeFile(manifestPath, `${JSON.stringify(annotationManifest(), null, 2)}\n`, 'utf8')
+            await writeFile(manifestPath, `${JSON.stringify(annotationManifest({ queryCount: 2 }), null, 2)}\n`, 'utf8')
 
             await expect(
-                finalizeMain([
-                    '--review',
-                    reviewPath,
-                    '--manifest',
-                    manifestPath,
-                    '--dataset',
-                    datasetPath,
-                    '--annotator',
-                    'project-owner',
-                    '--reviewed-at',
-                    '2026-09-29T12:00:00.000Z',
-                ])
+                finalizeMain([...finalizeArgs(reviewPath, manifestPath, datasetPath), '--reviewed-at', '2026-09-29T12:00:00.000Z'])
             ).resolves.toBe(0)
 
             const datasetText = await readFile(datasetPath, 'utf8')
             expect(datasetText).toContain('"relevance":3')
             expect(datasetText).not.toContain('"relevance":0')
-            expect(JSON.parse(datasetText)).toEqual({
-                id: 'query-1',
-                query: '灾害风险等级如何判断？',
-                knowledgeBaseId: 'kb-1',
-                relevantChunks: [{ chunkId: 'document-1_0', relevance: 3 }],
-            })
+            expect(datasetText.trim().split('\n')).toHaveLength(2)
+            expect(
+                datasetText
+                    .trim()
+                    .split('\n')
+                    .map(line => JSON.parse(line))
+            ).toEqual([
+                {
+                    id: 'query-1',
+                    query: '灾害风险等级如何判断？',
+                    knowledgeBaseId: 'kb-1',
+                    relevantChunks: [{ chunkId: 'document-1_0', relevance: 3 }],
+                },
+                {
+                    id: 'query-2',
+                    query: '另一个问题',
+                    knowledgeBaseId: 'kb-1',
+                    relevantChunks: [{ chunkId: 'document-1_0', relevance: 3 }],
+                },
+            ])
 
             const manifest = JSON.parse(await readFile(manifestPath, 'utf8')) as AnnotationManifest
             expect(manifest).toMatchObject({
                 annotationStatus: 'human-reviewed',
                 annotator: 'project-owner',
                 reviewedAt: '2026-09-29T12:00:00.000Z',
-                datasetSha256: createHash('sha256').update(datasetText, 'utf8').digest('hex'),
+                datasetSha256: 'b78ca1b9b87d8b49426ce381e5494998c00907ab1adcff4bd77fc4748db2d8a7',
             })
             expect(await readFile(reviewPath, 'utf8')).toBe(reviewText)
         } finally {
@@ -435,6 +561,45 @@ describe('finalize-rag-annotation CLI', () => {
                 finalizeMain(['--review', reviewPath, '--manifest', manifestPath, '--dataset', datasetPath, '--annotator', 'project-owner'])
             ).resolves.toBe(2)
             await expect(readFile(datasetPath, 'utf8')).rejects.toThrow()
+        } finally {
+            await rm(tempRoot, { recursive: true, force: true })
+        }
+    })
+
+    it.each([
+        ['no old outputs', false, false],
+        ['only old dataset', true, false],
+        ['only old manifest', false, true],
+    ])('rolls back both outputs when manifest publish fails: %s', async (_, hasDataset, hasManifest) => {
+        const tempRoot = await mkdtemp(join(tmpdir(), 'rag-annotation-rollback-'))
+        const datasetPath = join(tempRoot, 'dataset.jsonl')
+        const manifestPath = join(tempRoot, 'manifest.json')
+        const oldDatasetText = 'old dataset\n'
+        const oldManifestText = 'old manifest\n'
+        const failingRename = async (
+            source: Parameters<typeof renameFile>[0],
+            destination: Parameters<typeof renameFile>[1]
+        ): Promise<void> => {
+            if (source.toString().endsWith('.tmp') && destination.toString() === manifestPath) {
+                throw new Error('simulated manifest publish failure')
+            }
+            await renameFile(source, destination)
+        }
+
+        try {
+            if (hasDataset) {
+                await writeFile(datasetPath, oldDatasetText, 'utf8')
+            }
+            if (hasManifest) {
+                await writeFile(manifestPath, oldManifestText, 'utf8')
+            }
+
+            await expect(writeAtomicOutputs(datasetPath, 'new dataset\n', manifestPath, 'new manifest\n', failingRename)).rejects.toThrow(
+                'simulated manifest publish failure'
+            )
+            expect(await readIfPresent(datasetPath)).toBe(hasDataset ? oldDatasetText : undefined)
+            expect(await readIfPresent(manifestPath)).toBe(hasManifest ? oldManifestText : undefined)
+            expect((await readdir(tempRoot)).filter(name => name.endsWith('.tmp') || name.endsWith('.bak'))).toEqual([])
         } finally {
             await rm(tempRoot, { recursive: true, force: true })
         }
