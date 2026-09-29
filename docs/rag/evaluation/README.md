@@ -2,7 +2,54 @@
 
 这个目录包含评测工具的命令契约和一个故意使用虚构 ID 的 JSONL 示例。`example.jsonl` 只用于检查解析器、命令参数和报告工具链，不是人工确认的质量基线；除非数据库和 Qdrant 中恰好创建了这些 `demo-*` ID，否则用它执行真实评测会明确失败。
 
-当前状态：评测机制已经实现并有自动化测试，但仓库尚未包含真实人工标注集或审阅过的质量基线。建立真实基线前，应替换为实际 Knowledge Base 和 chunk ID，并记录标注来源、标注时间和评审规则。
+当前状态：评测机制、真实人工标注集和首个质量基线均已完成。`prometheus-global-guardian-v1` 包含 24 条查询、每条 30 个候选 chunk，固定 Knowledge Base 为 `cmtjxa48x000dyygofy7skckk`，基线使用 `top-k=5` 对 vector、fulltext、hybrid 三种模式评测。当前是 `project-owner` 单人初始基线，尚未完成第二标注人一致性验证。
+
+## 真实评测集与基线
+
+真实数据集和审阅材料：
+
+- 查询目录：`prometheus-global-guardian-v1.queries.jsonl`
+- 人工审阅文件：`prometheus-global-guardian-v1.review.jsonl`
+- 正式评测集：`prometheus-global-guardian-v1.jsonl`
+- 标注指南：`prometheus-global-guardian-v1.annotation-guide.md`
+- manifest：`prometheus-global-guardian-v1.manifest.json`
+- 首个基线：`baselines/prometheus-global-guardian-v1.report.json` 和 `.report.md`
+
+从候选生成到未来比较的完整流程：
+
+```bash
+# 1. 生成候选审阅材料；此步骤不会自动生成人工标签
+pnpm --filter @ai-workflow/workflow prepare:rag-annotation -- \
+  --queries docs/rag/evaluation/prometheus-global-guardian-v1.queries.jsonl \
+  --output docs/rag/evaluation/prometheus-global-guardian-v1.review.jsonl \
+  --manifest docs/rag/evaluation/prometheus-global-guardian-v1.manifest.json \
+  --top-k 10
+
+# 2. 按标注指南人工填写全部 720 个候选的 humanRelevance 和非零 rationale
+#    docs/rag/evaluation/prometheus-global-guardian-v1.annotation-guide.md
+
+# 3. 将人工审阅结果固化为正式评测集
+pnpm --filter @ai-workflow/workflow finalize:rag-annotation -- \
+  --review docs/rag/evaluation/prometheus-global-guardian-v1.review.jsonl \
+  --manifest docs/rag/evaluation/prometheus-global-guardian-v1.manifest.json \
+  --dataset docs/rag/evaluation/prometheus-global-guardian-v1.jsonl \
+  --annotator project-owner
+
+# 4. 运行首个三模式基线
+pnpm --filter @ai-workflow/workflow evaluate:rag -- \
+  --dataset docs/rag/evaluation/prometheus-global-guardian-v1.jsonl \
+  --mode vector --mode fulltext --mode hybrid --top-k 5 \
+  --output-dir .tmp/prometheus-global-guardian-v1-baseline
+
+# 5. 用固定基线检查后续检索改动是否回归
+pnpm --filter @ai-workflow/workflow evaluate:rag -- \
+  --dataset docs/rag/evaluation/prometheus-global-guardian-v1.jsonl \
+  --mode vector --mode fulltext --mode hybrid --top-k 5 \
+  --baseline docs/rag/evaluation/baselines/prometheus-global-guardian-v1.report.json \
+  --output-dir .tmp/prometheus-global-guardian-v1-comparison
+```
+
+基线只适用于相同的数据集 SHA-256、Knowledge Base、文档切分、embedding 模型、检索模式、检索参数和 `top-k`。修改文档、chunk、embedding、检索参数或人工标签后，应创建新的数据集版本或重新确认基线，不能静默覆盖当前基线。后续工作包括第二标注人一致性评测、无答案查询、LLM 最终答案质量评测和生产日志驱动的查询扩充。
 
 ## 命令契约
 

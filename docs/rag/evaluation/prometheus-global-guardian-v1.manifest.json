@@ -1,0 +1,20 @@
+{
+    "datasetVersion": "prometheus-global-guardian-v1",
+    "knowledgeBaseId": "cmtjxa48x000dyygofy7skckk",
+    "knowledgeBaseName": "Prometheus Global Guardian 灾害分析 RAG 知识库",
+    "documentId": "cmtjxadio000eyygov3gl3za5",
+    "documentName": "prometheus-global-guardian-知识库",
+    "documentSha256": "5badb694e9f2095bc80ea9db28c3a5dd3591e17266b76ec25e61b6a0cf1eef72",
+    "chunkCount": 30,
+    "chunkSize": 500,
+    "chunkOverlap": 50,
+    "embeddingProvider": "ollama",
+    "embeddingModel": "mxbai-embed-large:latest",
+    "embeddingDimensions": 1024,
+    "queryCount": 24,
+    "annotationGuideVersion": "v1",
+    "annotationStatus": "human-reviewed",
+    "annotator": "project-owner",
+    "reviewedAt": "2026-09-29T16:51:05.125Z",
+    "datasetSha256": "9c3b6b988ed65c59001cb3913a7590f2db73dcd5d0270c16fa45a2ac927df817"
+}

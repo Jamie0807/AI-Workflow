@@ -186,6 +186,55 @@ export class QdrantVectorStore implements VectorStoreService, TextSearchService 
     }
 
     /**
+     * 分页读取知识库中的全部切片
+     */
+    async listChunks(knowledgeBaseIds: string[]): Promise<VectorSearchResult[]> {
+        if (!knowledgeBaseIds || knowledgeBaseIds.length === 0) {
+            throw new Error('Knowledge base IDs cannot be empty')
+        }
+
+        try {
+            const chunks: VectorSearchResult[] = []
+            let offset: string | number | Record<string, unknown> | null | undefined
+
+            do {
+                const response = await this.client.scroll(this.collectionName, {
+                    filter: {
+                        must: [
+                            {
+                                key: 'knowledgeBaseId',
+                                match: { any: knowledgeBaseIds },
+                            },
+                        ],
+                    },
+                    limit: 1000,
+                    ...(offset === undefined ? {} : { offset }),
+                    with_payload: true,
+                    with_vector: false,
+                })
+
+                chunks.push(
+                    ...response.points.map(point => ({
+                        chunkId: (point.payload?.chunkId as string) || '',
+                        content: (point.payload?.content as string) || '',
+                        chunkIndex: (point.payload?.chunkIndex as number) || 0,
+                        documentId: (point.payload?.documentId as string) || '',
+                        knowledgeBaseId: (point.payload?.knowledgeBaseId as string) || '',
+                        score: 0,
+                        metadata: (point.payload?.metadata as Record<string, unknown>) || undefined,
+                    }))
+                )
+
+                offset = response.next_page_offset
+            } while (offset !== null && offset !== undefined)
+
+            return chunks
+        } catch (error) {
+            throw new Error(`Failed to list chunks: ${error instanceof Error ? error.message : String(error)}`)
+        }
+    }
+
+    /**
      * 获取集合信息
      */
     async getCollectionInfo(): Promise<{

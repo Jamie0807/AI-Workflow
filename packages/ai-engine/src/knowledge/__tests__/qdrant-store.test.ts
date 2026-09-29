@@ -1,6 +1,7 @@
 /* eslint-disable no-console */
 
-import { afterAll, beforeAll, describe, expect, it } from 'vitest'
+import type { QdrantClient } from '@qdrant/js-client-rest'
+import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest'
 
 import { createQdrantVectorStore, QdrantVectorStore } from '../store/qdrant-store'
 import type { ChunkWithVector } from '../types'
@@ -218,6 +219,55 @@ describe('QdrantVectorStore', () => {
                     topK: 5,
                 })
             ).rejects.toThrow()
+        })
+    })
+
+    describe('分页读取', () => {
+        it('lists all chunks for a knowledge base across scroll pages', async () => {
+            const client = (store as unknown as { client: QdrantClient }).client
+            const scroll = vi.spyOn(client, 'scroll')
+
+            scroll
+                .mockResolvedValueOnce({
+                    points: [
+                        {
+                            id: 'point-1',
+                            payload: {
+                                chunkId: 'chunk-1',
+                                content: 'first chunk',
+                                chunkIndex: 0,
+                                documentId: 'doc-1',
+                                knowledgeBaseId: 'kb-1',
+                            },
+                        },
+                    ],
+                    next_page_offset: 'page-2',
+                })
+                .mockResolvedValueOnce({
+                    points: [
+                        {
+                            id: 'point-2',
+                            payload: {
+                                chunkId: 'chunk-2',
+                                content: 'second chunk',
+                                chunkIndex: 1,
+                                documentId: 'doc-1',
+                                knowledgeBaseId: 'kb-1',
+                            },
+                        },
+                    ],
+                    next_page_offset: null,
+                })
+
+            try {
+                await expect(store.listChunks(['kb-1'])).resolves.toEqual([
+                    expect.objectContaining({ chunkId: 'chunk-1', knowledgeBaseId: 'kb-1' }),
+                    expect.objectContaining({ chunkId: 'chunk-2', knowledgeBaseId: 'kb-1' }),
+                ])
+                expect(scroll).toHaveBeenNthCalledWith(2, TEST_COLLECTION, expect.objectContaining({ offset: 'page-2' }))
+            } finally {
+                scroll.mockRestore()
+            }
         })
     })
 

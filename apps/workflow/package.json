@@ -8,7 +8,9 @@
         "start": "next start",
         "typecheck": "tsc --noEmit",
         "test:user-settings": "node --test --experimental-strip-types lib/user-settings.test.mjs",
-        "evaluate:rag": "../../packages/ai-engine/node_modules/.bin/tsx scripts/evaluate-rag.ts"
+        "evaluate:rag": "../../packages/ai-engine/node_modules/.bin/tsx scripts/evaluate-rag.ts",
+        "prepare:rag-annotation": "../../packages/ai-engine/node_modules/.bin/tsx scripts/prepare-rag-annotation.ts",
+        "finalize:rag-annotation": "../../packages/ai-engine/node_modules/.bin/tsx scripts/finalize-rag-annotation.ts"
     },
     "dependencies": {
         "@dnd-kit/core": "^6.3.1",

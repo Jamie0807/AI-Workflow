@@ -129,7 +129,7 @@
 - 增加 rerank 阶段，提高 RAG 召回结果排序质量。
 - 增加引用来源展示，让答案可以追溯到具体文档和切片。
 - 优化 chunk 策略，支持按 Markdown 标题、代码块、表格等结构切分。
-- 已实现自动化 RAG 检索质量评测：使用 `docs/rag/evaluation/` 下的 UTF-8 JSONL 标注集，通过 `pnpm --filter @ai-workflow/workflow evaluate:rag -- --dataset <path> --mode vector --top-k 5 --output-dir .tmp/rag-evaluation` 评测向量、全文或混合检索，输出 Precision@K、Recall@K、MRR@K、nDCG@K、p50/p95 延迟及 JSON/Markdown 报告；真实人工标注集和首个质量基线待补充。
+- 已完成自动化 RAG 检索质量评测和首个真实基线：`docs/rag/evaluation/prometheus-global-guardian-v1.jsonl` 包含 24 条人工标注查询，固定 Knowledge Base `cmtjxa48x000dyygofy7skckk`，通过 `pnpm --filter @ai-workflow/workflow evaluate:rag -- --dataset <path> --mode vector --mode fulltext --mode hybrid --top-k 5 --output-dir .tmp/rag-evaluation` 评测三种检索模式，输出 Precision@K、Recall@K、MRR@K、nDCG@K、p50/p95 延迟及 JSON/Markdown 报告。当前基线是 `project-owner` 单人初始基线；后续补充第二标注人一致性、无答案查询、最终答案生成质量和生产日志驱动的查询扩充。
 - 增加知识库重建索引能力，方便模型或切片参数变更后重新处理。
 
 ### 2.3 执行引擎
