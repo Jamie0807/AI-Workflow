@@ -2,7 +2,7 @@
 
 import { describe, expect, it } from 'vitest'
 
-import { compareWithBaseline } from '../baseline'
+import { compareWithBaseline, validateEvaluationReport } from '../baseline'
 import type { EvaluationMetadata, EvaluationReport, RankingMetrics } from '../types'
 
 const baseMetrics: RankingMetrics = {
@@ -114,6 +114,17 @@ describe('compareWithBaseline', () => {
         } as EvaluationMetadata
 
         expect(compareWithBaseline(createReport({ metadata: currentMetadata }), createReport()).passed).toBe(true)
+    })
+
+    it('validates report mode, metadata, and quality metrics before service execution', () => {
+        expect(validateEvaluationReport(createReport(), 'baseline')).toEqual([])
+        expect(validateEvaluationReport({ mode: 'vector', metrics: {} }, 'baseline')).toEqual([
+            'baseline metadata is missing comparison context',
+            'baseline metrics missing metric: precisionAtK',
+            'baseline metrics missing metric: recallAtK',
+            'baseline metrics missing metric: mrrAtK',
+            'baseline metrics missing metric: ndcgAtK',
+        ])
     })
 
     it('returns current minus baseline for all four quality metrics', () => {

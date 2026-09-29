@@ -55,6 +55,10 @@ describe('parseEvaluationDataset', () => {
         expect(() => parseEvaluationDataset('invalid-json')).toThrow('line 1')
     })
 
+    it.each(['', '\n', '\n\n'])('rejects an empty evaluation dataset: %j', text => {
+        expect(() => parseEvaluationDataset(text)).toThrow('at least one sample is required')
+    })
+
     it.each([
         ['empty query', { id: 'q-1', query: '', knowledgeBaseId: 'kb-1', relevantChunks: [{ chunkId: 'c-1', relevance: 1 }] }],
         ['empty relevant chunks', { id: 'q-1', query: '登录', knowledgeBaseId: 'kb-1', relevantChunks: [] }],

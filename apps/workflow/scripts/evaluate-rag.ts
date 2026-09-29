@@ -15,6 +15,7 @@ import {
     createQdrantVectorStore,
     evaluateRetrievalDataset,
     parseEvaluationDataset,
+    validateEvaluationReport,
 } from '@ai-workflow/ai-engine'
 
 const execFileAsync = promisify(execFile)
@@ -353,6 +354,17 @@ function addCliMetadata(
         retrievalConfig: {
             threshold: report.config.threshold ?? null,
             vectorWeight: report.config.vectorWeight ?? null,
+            embedding: embedding.map(item => ({
+                knowledgeBaseId: item.knowledgeBaseId,
+                provider: item.provider,
+                model: item.model,
+                dimensions: item.dimensions,
+                baseUrl: item.baseUrl,
+            })),
+            qdrant: {
+                url: qdrantUrl,
+                collectionName: 'knowledge_chunks',
+            },
         },
         gitRevision,
         embedding,
@@ -385,6 +397,14 @@ async function readBaselineReport(path: string, mode: RetrievalMode, workspaceRo
     const report = candidates.find(candidate => isRecord(candidate) && candidate.mode === mode)
     if (!isRecord(report)) {
         throw new CliConfigError(`Baseline report ${baselinePath} does not contain a ${mode} report`)
+    }
+
+    const validationReasons = validateEvaluationReport(report, `baseline ${mode}`)
+    if (validationReasons.length > 0) {
+        throw new CliConfigError(`Baseline report ${baselinePath} is malformed: ${validationReasons.join('; ')}`)
+    }
+    if (!isRecord(report.metadata) || report.metadata.mode !== mode) {
+        throw new CliConfigError(`Baseline report ${baselinePath} metadata mode does not match ${mode}`)
     }
 
     return report as unknown as EvaluationReport

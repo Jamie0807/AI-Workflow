@@ -100,5 +100,9 @@ export function parseEvaluationDataset(text: string): EvaluationDataset {
         samples.push(sample)
     }
 
+    if (samples.length === 0) {
+        throw new Error('Invalid evaluation dataset: at least one sample is required')
+    }
+
     return { samples }
 }

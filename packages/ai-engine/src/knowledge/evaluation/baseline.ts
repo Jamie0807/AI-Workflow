@@ -231,6 +231,14 @@ function getReportField(report: unknown, field: 'metadata' | 'metrics'): unknown
     return isRecord(report) ? report[field] : undefined
 }
 
+export function validateEvaluationReport(report: unknown, label = 'report'): Array<string> {
+    const modeReasons = isRecord(report) && isRetrievalMode(report.mode) ? [] : [`${label} mode is malformed`]
+    const metadata = getComparableMetadata(getReportField(report, 'metadata'), label)
+    const metrics = getValidatedMetrics(report, label)
+
+    return [...modeReasons, ...metadata.reasons, ...metrics.reasons]
+}
+
 function createEmptyDeltas(): RankingMetrics {
     return {
         precisionAtK: 0,
