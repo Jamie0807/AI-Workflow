@@ -285,8 +285,11 @@ export async function writeAtomicOutputs(
     const manifestBackupPath = `${manifestPath}.${randomUUID()}.bak`
     let datasetBackupCreated = false
     let manifestBackupCreated = false
+    let datasetBackupRestored = false
+    let manifestBackupRestored = false
     let datasetPublished = false
     let manifestPublished = false
+    let committed = false
 
     try {
         if (await pathExists(datasetPath)) {
@@ -304,7 +307,9 @@ export async function writeAtomicOutputs(
         datasetPublished = true
         await renameFile(manifestTempPath, manifestPath)
         manifestPublished = true
+        committed = true
     } catch (error) {
+        const rollbackFailures: string[] = []
         if (datasetPublished || datasetBackupCreated) {
             await removeIfPresent(datasetPath)
         }
@@ -312,17 +317,34 @@ export async function writeAtomicOutputs(
             await removeIfPresent(manifestPath)
         }
         if (datasetBackupCreated) {
-            await renameFile(datasetBackupPath, datasetPath).catch(() => undefined)
+            try {
+                await renameFile(datasetBackupPath, datasetPath)
+                datasetBackupRestored = true
+            } catch (restoreError) {
+                rollbackFailures.push(`dataset restore: ${errorMessage(restoreError)}`)
+            }
         }
         if (manifestBackupCreated) {
-            await renameFile(manifestBackupPath, manifestPath).catch(() => undefined)
+            try {
+                await renameFile(manifestBackupPath, manifestPath)
+                manifestBackupRestored = true
+            } catch (restoreError) {
+                rollbackFailures.push(`manifest restore: ${errorMessage(restoreError)}`)
+            }
+        }
+        if (rollbackFailures.length > 0) {
+            throw new Error(`Output publish failed: ${errorMessage(error)}; rollback failure: ${rollbackFailures.join('; ')}`)
         }
         throw error
     } finally {
         await removeIfPresent(datasetTempPath)
         await removeIfPresent(manifestTempPath)
-        await removeIfPresent(datasetBackupPath)
-        await removeIfPresent(manifestBackupPath)
+        if (committed || datasetBackupRestored) {
+            await removeIfPresent(datasetBackupPath)
+        }
+        if (committed || manifestBackupRestored) {
+            await removeIfPresent(manifestBackupPath)
+        }
     }
 }
 

@@ -604,4 +604,75 @@ describe('finalize-rag-annotation CLI', () => {
             await rm(tempRoot, { recursive: true, force: true })
         }
     })
+
+    it('retains the backup and exposes rollback failure when restoring the manifest fails', async () => {
+        const tempRoot = await mkdtemp(join(tmpdir(), 'rag-annotation-rollback-'))
+        const datasetPath = join(tempRoot, 'dataset.jsonl')
+        const manifestPath = join(tempRoot, 'manifest.json')
+        const oldDatasetText = 'old dataset\n'
+        const oldManifestText = 'old manifest\n'
+        const failingRename = async (
+            source: Parameters<typeof renameFile>[0],
+            destination: Parameters<typeof renameFile>[1]
+        ): Promise<void> => {
+            if (source.toString().endsWith('.tmp') && destination.toString() === manifestPath) {
+                throw new Error('simulated manifest publish failure')
+            }
+            if (source.toString().endsWith('.bak') && destination.toString() === manifestPath) {
+                throw new Error('simulated manifest restore failure')
+            }
+            await renameFile(source, destination)
+        }
+
+        try {
+            await writeFile(datasetPath, oldDatasetText, 'utf8')
+            await writeFile(manifestPath, oldManifestText, 'utf8')
+
+            await expect(writeAtomicOutputs(datasetPath, 'new dataset\n', manifestPath, 'new manifest\n', failingRename)).rejects.toThrow(
+                /rollback failure.*simulated manifest restore failure/
+            )
+            expect(await readIfPresent(datasetPath)).toBe(oldDatasetText)
+            expect(await readIfPresent(manifestPath)).toBeUndefined()
+
+            const backupNames = (await readdir(tempRoot)).filter(name => name.endsWith('.bak'))
+            expect(backupNames).toHaveLength(1)
+            expect(await readFile(join(tempRoot, backupNames[0]!), 'utf8')).toBe(oldManifestText)
+            expect((await readdir(tempRoot)).filter(name => name.endsWith('.tmp'))).toEqual([])
+        } finally {
+            await rm(tempRoot, { recursive: true, force: true })
+        }
+    })
+
+    it('rolls back both old outputs when the second publish rename fails through the CLI', async () => {
+        const tempRoot = await mkdtemp(join(tmpdir(), 'rag-annotation-cli-rollback-'))
+        const reviewPath = join(tempRoot, 'review.jsonl')
+        const manifestPath = join(tempRoot, 'manifest.json')
+        const datasetPath = join(tempRoot, 'dataset.jsonl')
+        const reviewText = `${JSON.stringify(annotationReview())}\n`
+        const oldManifestText = `${JSON.stringify(annotationManifest(), null, 2)}\n`
+        const oldDatasetText = 'old dataset\n'
+        const failingRename = async (
+            source: Parameters<typeof renameFile>[0],
+            destination: Parameters<typeof renameFile>[1]
+        ): Promise<void> => {
+            if (source.toString().endsWith('.tmp') && destination.toString() === manifestPath) {
+                throw new Error('simulated manifest publish failure')
+            }
+            await renameFile(source, destination)
+        }
+
+        try {
+            await writeFile(reviewPath, reviewText, 'utf8')
+            await writeFile(manifestPath, oldManifestText, 'utf8')
+            await writeFile(datasetPath, oldDatasetText, 'utf8')
+
+            await expect(finalizeMain(finalizeArgs(reviewPath, manifestPath, datasetPath), { rename: failingRename })).resolves.toBe(1)
+            expect(await readFile(datasetPath, 'utf8')).toBe(oldDatasetText)
+            expect(await readFile(manifestPath, 'utf8')).toBe(oldManifestText)
+            expect(await readFile(reviewPath, 'utf8')).toBe(reviewText)
+            expect((await readdir(tempRoot)).filter(name => name.endsWith('.tmp') || name.endsWith('.bak'))).toEqual([])
+        } finally {
+            await rm(tempRoot, { recursive: true, force: true })
+        }
+    })
 })
