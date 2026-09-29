@@ -69,6 +69,24 @@ export interface AnnotationDocumentSnapshot {
 
 export type RetrievalResultsByMode = Record<RetrievalMode, readonly RetrievalResult[]>
 
+export interface AnnotationRuntimeDependencies {
+    parseAnnotationQueries: typeof parseAnnotationQueries
+    createEvaluationPrismaClient: typeof createEvaluationPrismaClient
+    loadKnowledgeBases: typeof loadKnowledgeBases
+    createRetrieverMap: typeof createRetrieverMap
+    createDatasetRetriever: typeof createDatasetRetriever
+    createQdrantVectorStore: typeof createQdrantVectorStore
+}
+
+const DEFAULT_ANNOTATION_RUNTIME: AnnotationRuntimeDependencies = {
+    parseAnnotationQueries,
+    createEvaluationPrismaClient,
+    loadKnowledgeBases,
+    createRetrieverMap,
+    createDatasetRetriever,
+    createQdrantVectorStore,
+}
+
 const HELP_TEXT = `Usage:
   pnpm --filter @ai-workflow/workflow prepare:rag-annotation -- \\
     --queries docs/rag/evaluation/prometheus-global-guardian-v1.queries.jsonl \\
@@ -405,7 +423,10 @@ async function writeAtomicOutputs(
     }
 }
 
-export async function main(argv: readonly string[] = process.argv.slice(2)): Promise<number> {
+export async function main(
+    argv: readonly string[] = process.argv.slice(2),
+    runtime: AnnotationRuntimeDependencies = DEFAULT_ANNOTATION_RUNTIME
+): Promise<number> {
     if (argv.includes('--help')) {
         process.stdout.write(HELP_TEXT)
         return 0
@@ -432,15 +453,15 @@ export async function main(argv: readonly string[] = process.argv.slice(2)): Pro
 
         let queries: AnnotationQuery[]
         try {
-            queries = parseAnnotationQueries(queryText)
+            queries = runtime.parseAnnotationQueries(queryText)
         } catch (error) {
             throw new CliConfigError(`Invalid annotation queries ${queriesPath}: ${errorMessage(error)}`)
         }
         validateQueries(queries)
 
-        evaluationDatabase = await createEvaluationPrismaClient()
+        evaluationDatabase = await runtime.createEvaluationPrismaClient()
         const { client } = evaluationDatabase
-        const knowledgeBases = await loadKnowledgeBases(client, [FIXED_KNOWLEDGE_BASE_ID])
+        const knowledgeBases = await runtime.loadKnowledgeBases(client, [FIXED_KNOWLEDGE_BASE_ID])
         const knowledgeBase = knowledgeBases[0]
         if (!knowledgeBase) {
             throw new CliConfigError(`Knowledge Base not found: ${FIXED_KNOWLEDGE_BASE_ID}`)
@@ -451,10 +472,10 @@ export async function main(argv: readonly string[] = process.argv.slice(2)): Pro
                 `expected the completed document to record ${EXPECTED_CHUNK_COUNT} chunks, found ${snapshot.document.chunkCount}`
             )
         }
-        const { retrievers } = createRetrieverMap(knowledgeBases)
-        const datasetRetriever = createDatasetRetriever(retrievers)
+        const { retrievers } = runtime.createRetrieverMap(knowledgeBases)
+        const datasetRetriever = runtime.createDatasetRetriever(retrievers)
         const qdrantUrl = process.env.QDRANT_URL?.trim() || 'http://localhost:6333'
-        const vectorStore = createQdrantVectorStore({ url: qdrantUrl, collectionName: 'knowledge_chunks' })
+        const vectorStore = runtime.createQdrantVectorStore({ url: qdrantUrl, collectionName: 'knowledge_chunks' })
         const corpus = validateCorpus(await vectorStore.listChunks([FIXED_KNOWLEDGE_BASE_ID]), snapshot.document.id)
 
         const reviews: AnnotationReview[] = []

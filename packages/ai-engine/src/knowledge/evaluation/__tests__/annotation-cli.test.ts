@@ -1,9 +1,15 @@
+import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises'
+import { tmpdir } from 'node:os'
+import { join } from 'node:path'
+
 import { describe, expect, it, vi } from 'vitest'
 
 import {
     type AnnotationCorpusChunk,
+    type AnnotationRuntimeDependencies,
     buildAnnotationManifest,
     buildAnnotationReview,
+    FIXED_KNOWLEDGE_BASE_ID,
     main,
     parseAnnotationCliArgs,
 } from '../../../../../../apps/workflow/scripts/prepare-rag-annotation'
@@ -164,5 +170,120 @@ describe('prepare-rag-annotation CLI', () => {
             reviewedAt: null,
             datasetSha256: null,
         })
+    })
+
+    it('orchestrates mocked retrieval for all queries and writes valid review and manifest outputs', async () => {
+        const tempRoot = await mkdtemp(join(tmpdir(), 'rag-annotation-cli-'))
+        const queriesPath = join(tempRoot, 'queries.jsonl')
+        const outputPath = join(tempRoot, 'review.jsonl')
+        const manifestPath = join(tempRoot, 'manifest.json')
+        const corpus = Array.from({ length: 30 }, (_, chunkIndex) => ({
+            chunkId: `document-1_${chunkIndex}`,
+            content: `完整 chunk ${chunkIndex}`,
+            chunkIndex,
+            documentId: 'document-1',
+            knowledgeBaseId: FIXED_KNOWLEDGE_BASE_ID,
+            score: 0,
+        }))
+        const queryText = Array.from({ length: 24 }, (_, index) =>
+            JSON.stringify({
+                id: `query-${index + 1}`,
+                query: `问题 ${index + 1}`,
+                intent: 'risk-levels',
+                knowledgeBaseId: FIXED_KNOWLEDGE_BASE_ID,
+            })
+        ).join('\n')
+        const retrieve = vi.fn(async ({ mode, topK }: { mode: RetrievalMode; topK: number }) =>
+            corpus.slice(0, topK).map((chunk, index) => ({
+                ...chunk,
+                score: mode === 'vector' ? 0.9 - index / 100 : mode === 'fulltext' ? 0.8 - index / 100 : 0.7 - index / 100,
+            }))
+        )
+        const listChunks = vi.fn().mockResolvedValue(corpus)
+        const createEvaluationPrismaClient = vi.fn()
+        const loadKnowledgeBases = vi.fn()
+        const createRetrieverMap = vi.fn()
+        const createDatasetRetriever = vi.fn()
+        const createQdrantVectorStore = vi.fn()
+        const client = {
+            $disconnect: vi.fn().mockResolvedValue(undefined),
+            document: {
+                findMany: vi.fn().mockResolvedValue([{ id: 'document-1', name: 'document.md', content: '原始文档内容', chunkCount: 30 }]),
+            },
+            knowledgeBase: {
+                findUnique: vi.fn().mockResolvedValue({
+                    id: FIXED_KNOWLEDGE_BASE_ID,
+                    name: '知识库',
+                    chunkSize: 500,
+                    chunkOverlap: 50,
+                    embeddingProvider: 'ollama',
+                    embeddingModel: 'mxbai-embed-large:latest',
+                    dimensions: 1024,
+                }),
+            },
+        }
+        const pool = { end: vi.fn().mockResolvedValue(undefined) }
+
+        createEvaluationPrismaClient.mockResolvedValue({ client, pool })
+        loadKnowledgeBases.mockResolvedValue([
+            {
+                id: FIXED_KNOWLEDGE_BASE_ID,
+                embeddingModel: 'mxbai-embed-large:latest',
+                embeddingProvider: 'ollama',
+                dimensions: 1024,
+                threshold: 0.2,
+                vectorWeight: 0.7,
+            },
+        ])
+        createRetrieverMap.mockReturnValue({ retrievers: new Map([[FIXED_KNOWLEDGE_BASE_ID, {}]]) })
+        createDatasetRetriever.mockReturnValue({ retrieve })
+        createQdrantVectorStore.mockReturnValue({ listChunks })
+        const runtime = {
+            parseAnnotationQueries,
+            createEvaluationPrismaClient,
+            loadKnowledgeBases,
+            createRetrieverMap,
+            createDatasetRetriever,
+            createQdrantVectorStore,
+        } satisfies AnnotationRuntimeDependencies
+
+        try {
+            await writeFile(queriesPath, `${queryText}\n`, 'utf8')
+
+            await expect(main(['--queries', queriesPath, '--output', outputPath, '--manifest', manifestPath], runtime)).resolves.toBe(0)
+
+            expect(retrieve).toHaveBeenCalledTimes(72)
+            for (const mode of ['vector', 'fulltext', 'hybrid'] as const) {
+                expect(retrieve.mock.calls.filter(([options]) => options.mode === mode)).toHaveLength(24)
+            }
+            expect(retrieve.mock.calls.every(([options]) => options.topK === 10)).toBe(true)
+            expect(listChunks).toHaveBeenCalledWith([FIXED_KNOWLEDGE_BASE_ID])
+
+            const reviews = (await readFile(outputPath, 'utf8'))
+                .trim()
+                .split('\n')
+                .map(line => JSON.parse(line) as { candidates: Array<{ chunkId: string; humanRelevance: number | null }> })
+            expect(reviews).toHaveLength(24)
+            for (const review of reviews) {
+                expect(review.candidates).toHaveLength(30)
+                expect(review.candidates.map(candidate => candidate.chunkId)).toEqual(corpus.map(chunk => chunk.chunkId))
+                expect(review.candidates.every(candidate => candidate.humanRelevance === null)).toBe(true)
+            }
+
+            const manifest = JSON.parse(await readFile(manifestPath, 'utf8')) as Record<string, unknown>
+            expect(manifest).toMatchObject({
+                knowledgeBaseId: FIXED_KNOWLEDGE_BASE_ID,
+                documentId: 'document-1',
+                chunkCount: 30,
+                queryCount: 24,
+                annotationStatus: 'candidate',
+                annotator: null,
+                datasetSha256: null,
+            })
+            expect(client.$disconnect).toHaveBeenCalledTimes(1)
+            expect(pool.end).toHaveBeenCalledTimes(1)
+        } finally {
+            await rm(tempRoot, { recursive: true, force: true })
+        }
     })
 })

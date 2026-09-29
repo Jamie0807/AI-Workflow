@@ -31,3 +31,17 @@ Task 4 已完成候选生成 CLI、对应测试和 workflow package scripts。�
 
 - brief 给出的 focused 命令 `pnpm --filter @ai-workflow/workflow exec vitest run scripts/annotation-cli.test.ts` 在当前仓库无法运行：workflow package 没有 `vitest` binary，且测试文件按 brief 的 Files 约定位于 ai-engine evaluation tests。实际使用 `pnpm --filter @ai-workflow/ai-engine test -- annotation-cli.test.ts` 完成 focused 验证。
 - 全量 ai-engine 测试仍显示既有 Qdrant client/server 版本兼容性警告（client `1.16.2`、server `1.18.1`），测试本身通过，Task 4 未修改依赖。
+
+## Review follow-up
+
+针对 review 的 Important 项补充了 `main` 编排覆盖：
+
+- `main` 增加可选的 `AnnotationRuntimeDependencies` 注入，默认路径仍使用真实 runtime；测试显式传入 vi.fn mock，因此不会连接真实 PostgreSQL、Qdrant 或 Ollama。
+- mock runtime 测试生成 24 条 query，验证输出包含 24 条 review；每条 review 包含完整 mock corpus 的 30 个 chunk，且所有 `humanRelevance` 均为 `null`。
+- 测试验证 vector/fulltext/hybrid 各调用 24 次，共 72 次，每次 `topK=10`；同时验证 `listChunks` 的固定 Knowledge Base 调用、review JSONL 和 manifest JSON 均可解析，以及 Prisma/pool 清理被调用。
+
+本次追加验证：
+
+- `pnpm --filter @ai-workflow/ai-engine test -- annotation-cli.test.ts annotation.test.ts`：31/31 通过。
+- `pnpm --filter @ai-workflow/workflow typecheck`：通过。
+- targeted Prettier、ESLint、`git diff --check`：通过。
