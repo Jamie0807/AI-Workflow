@@ -256,12 +256,19 @@ async function createEvaluationPrismaClient() {
     const { PrismaClient } = await import('../app/generated/prisma/client')
     const connectionString = process.env.DATABASE_URL || 'postgresql://postgres:xiaoer@localhost:5433/postgres'
     const pool = new Pool({ connectionString })
-    const adapter = new PrismaPg(pool)
 
-    return new PrismaClient({
-        adapter,
-        log: process.env.NODE_ENV === 'development' ? ['query', 'error', 'warn'] : ['error'],
-    })
+    try {
+        const adapter = new PrismaPg(pool)
+        const client = new PrismaClient({
+            adapter,
+            log: process.env.NODE_ENV === 'development' ? ['query', 'error', 'warn'] : ['error'],
+        })
+
+        return { client, pool }
+    } catch (error) {
+        await pool.end().catch(() => undefined)
+        throw error
+    }
 }
 
 function getSingleValue<T>(values: readonly T[], label: string): T {
@@ -470,7 +477,7 @@ export async function main(argv: readonly string[] = process.argv.slice(2)): Pro
         return 2
     }
 
-    let prismaClient: { $disconnect(): Promise<void> } | undefined
+    let evaluationDatabase: Awaited<ReturnType<typeof createEvaluationPrismaClient>> | undefined
     try {
         const gitContext = await getGitContext()
         const datasetPath = await resolveExistingPath(options.datasetPath, gitContext.workspaceRoot)
@@ -492,10 +499,16 @@ export async function main(argv: readonly string[] = process.argv.slice(2)): Pro
             throw new CliConfigError('evaluation dataset must not be empty')
         }
 
+        const baselineReports = new Map<RetrievalMode, EvaluationReport>()
+        if (options.baselinePath) {
+            for (const mode of options.modes) {
+                baselineReports.set(mode, await readBaselineReport(options.baselinePath, mode, gitContext.workspaceRoot))
+            }
+        }
+
         const knowledgeBaseIds = [...new Set(dataset.samples.map(sample => sample.knowledgeBaseId))]
-        const prisma = await createEvaluationPrismaClient()
-        prismaClient = prisma
-        const knowledgeBases = (await prisma.knowledgeBase.findMany({
+        evaluationDatabase = await createEvaluationPrismaClient()
+        const knowledgeBases = (await evaluationDatabase.client.knowledgeBase.findMany({
             where: { id: { in: knowledgeBaseIds } },
             select: {
                 id: true,
@@ -541,7 +554,10 @@ export async function main(argv: readonly string[] = process.argv.slice(2)): Pro
             const enrichedReport = addCliMetadata(report, datasetSha256, gitContext.revision, embeddings, qdrantUrl)
 
             if (options.baselinePath) {
-                const baseline = await readBaselineReport(options.baselinePath, mode, gitContext.workspaceRoot)
+                const baseline = baselineReports.get(mode)
+                if (!baseline) {
+                    throw new Error(`Baseline report is missing for mode ${mode}`)
+                }
                 const comparison = compareWithBaseline(enrichedReport, baseline)
                 enrichedReport.baselineComparison = comparison
                 baselineFailed ||= !comparison.passed
@@ -569,9 +585,12 @@ export async function main(argv: readonly string[] = process.argv.slice(2)): Pro
         process.stderr.write(`[evaluate:rag] ${errorMessage(error)}\n`)
         return exitCode
     } finally {
-        if (prismaClient) {
-            await prismaClient.$disconnect().catch(error => {
+        if (evaluationDatabase) {
+            await evaluationDatabase.client.$disconnect().catch(error => {
                 process.stderr.write(`[evaluate:rag] failed to disconnect Prisma: ${errorMessage(error)}\n`)
+            })
+            await evaluationDatabase.pool.end().catch(error => {
+                process.stderr.write(`[evaluate:rag] failed to close PostgreSQL pool: ${errorMessage(error)}\n`)
             })
         }
     }
