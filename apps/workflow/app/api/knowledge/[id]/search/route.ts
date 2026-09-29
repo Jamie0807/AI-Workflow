@@ -1,9 +1,8 @@
 import {
     createHybridRetriever,
     createOllamaEmbeddingService,
+    createQdrantFulltextProvider,
     createQdrantVectorStore,
-    type FulltextSearchProvider,
-    type RetrievalResult,
 } from '@ai-workflow/ai-engine'
 import { NextRequest } from 'next/server'
 import { z } from 'zod'
@@ -69,26 +68,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
             collectionName: 'knowledge_chunks',
         })
 
-        // 创建全文检索提供者（使用 Qdrant 的简单文本匹配）
-        const fulltextProvider: FulltextSearchProvider = {
-            async search(options): Promise<RetrievalResult[]> {
-                // 使用 QdrantVectorStore 的 textSearch 方法
-                const results = await (vectorStore as any).textSearch({
-                    query: options.query,
-                    knowledgeBaseIds: options.knowledgeBaseIds,
-                    topK: options.topK,
-                })
-                return results.map((r: any) => ({
-                    chunkId: r.chunkId,
-                    content: r.content,
-                    chunkIndex: r.chunkIndex,
-                    documentId: r.documentId,
-                    knowledgeBaseId: r.knowledgeBaseId,
-                    score: r.score,
-                    metadata: r.metadata,
-                }))
-            },
-        }
+        const fulltextProvider = createQdrantFulltextProvider(vectorStore)
 
         const retriever = createHybridRetriever(embeddingService, vectorStore, fulltextProvider)
 

@@ -11,5 +11,8 @@ export { OllamaEmbeddingService, createOllamaEmbeddingService } from './embeddin
 export { QdrantVectorStore, createQdrantVectorStore } from './store'
 
 // 检索器
-export { VectorRetriever, createVectorRetriever, HybridRetriever, createHybridRetriever } from './retriever'
-export type { FulltextSearchProvider } from './retriever'
+export { VectorRetriever, createVectorRetriever, HybridRetriever, createHybridRetriever, createQdrantFulltextProvider } from './retriever'
+export type { FulltextSearchProvider, TextSearchService } from './retriever'
+
+// 评测
+export * from './evaluation'

@@ -1,0 +1,2 @@
+{"id":"demo-sample-not-real-001","query":"如何重置演示账户密码？","knowledgeBaseId":"demo-kb-not-real-001","relevantChunks":[{"chunkId":"demo-document-not-real-001_chunk_000","relevance":3},{"chunkId":"demo-document-not-real-001_chunk_001","relevance":1}]}
+{"id":"demo-sample-not-real-002","query":"演示环境的向量集合叫什么？","knowledgeBaseId":"demo-kb-not-real-001","relevantChunks":[{"chunkId":"demo-document-not-real-002_chunk_000","relevance":2}]}

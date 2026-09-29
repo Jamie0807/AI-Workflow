@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest'
 
-import { createHybridRetriever, createVectorRetriever, HybridRetriever, VectorRetriever } from '../retriever'
+import { createHybridRetriever, createQdrantFulltextProvider, createVectorRetriever, HybridRetriever, VectorRetriever } from '../retriever'
 import type { FulltextSearchProvider } from '../retriever/hybrid-retriever'
 import type { EmbeddingService, RetrievalResult, VectorSearchResult, VectorStoreService } from '../types'
 
@@ -335,4 +335,32 @@ describe('HybridRetriever', () => {
             ).rejects.toThrow('Unsupported retrieval mode')
         })
     })
+})
+
+it('adapts Qdrant text search results to a fulltext provider', async () => {
+    const provider = createQdrantFulltextProvider({
+        async textSearch() {
+            return [
+                {
+                    chunkId: 'c-1',
+                    content: '登录说明',
+                    chunkIndex: 0,
+                    documentId: 'd-1',
+                    knowledgeBaseId: 'kb-1',
+                    score: 0.9,
+                },
+            ]
+        },
+    })
+
+    await expect(provider.search({ query: '登录', knowledgeBaseIds: ['kb-1'], topK: 5 })).resolves.toEqual([
+        {
+            chunkId: 'c-1',
+            content: '登录说明',
+            chunkIndex: 0,
+            documentId: 'd-1',
+            knowledgeBaseId: 'kb-1',
+            score: 0.9,
+        },
+    ])
 })

@@ -1,0 +1,6 @@
+export * from './types'
+export { parseEvaluationDataset } from './dataset'
+export { evaluateRetrievalDataset } from './evaluator'
+export type { EvaluationDependencies } from './evaluator'
+export { compareWithBaseline, validateEvaluationReport } from './baseline'
+export type { BaselineComparison, MetricTolerances } from './baseline'

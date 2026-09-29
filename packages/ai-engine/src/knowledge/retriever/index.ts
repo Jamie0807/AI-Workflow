@@ -1,3 +1,5 @@
 export { VectorRetriever, createVectorRetriever } from './vector-retriever'
 export { HybridRetriever, createHybridRetriever } from './hybrid-retriever'
+export { createQdrantFulltextProvider } from './qdrant-fulltext-provider'
 export type { FulltextSearchProvider } from './hybrid-retriever'
+export type { TextSearchService } from './qdrant-fulltext-provider'
