@@ -1,4 +1,4 @@
-import { mkdtemp, readdir, readFile, rename as renameFile, rm, writeFile } from 'node:fs/promises'
+import { mkdtemp, readdir, readFile, rename as renameFile, rm, unlink as unlinkFile, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 
@@ -672,6 +672,52 @@ describe('finalize-rag-annotation CLI', () => {
             expect(await readFile(reviewPath, 'utf8')).toBe(reviewText)
             expect((await readdir(tempRoot)).filter(name => name.endsWith('.tmp') || name.endsWith('.bak'))).toEqual([])
         } finally {
+            await rm(tempRoot, { recursive: true, force: true })
+        }
+    })
+
+    it('reports dataset cleanup failure and preserves the partial dataset when no old dataset exists', async () => {
+        const tempRoot = await mkdtemp(join(tmpdir(), 'rag-annotation-cli-cleanup-'))
+        const reviewPath = join(tempRoot, 'review.jsonl')
+        const manifestPath = join(tempRoot, 'manifest.json')
+        const datasetPath = join(tempRoot, 'dataset.jsonl')
+        const reviewText = `${JSON.stringify(annotationReview())}\n`
+        const oldManifestText = `${JSON.stringify(annotationManifest(), null, 2)}\n`
+        const failingRename = async (
+            source: Parameters<typeof renameFile>[0],
+            destination: Parameters<typeof renameFile>[1]
+        ): Promise<void> => {
+            if (source.toString().endsWith('.tmp') && destination.toString() === manifestPath) {
+                throw new Error('simulated manifest publish failure')
+            }
+            await renameFile(source, destination)
+        }
+        const failingUnlink = async (path: Parameters<typeof unlinkFile>[0]): Promise<void> => {
+            if (path.toString() === datasetPath) {
+                throw new Error('simulated dataset cleanup failure')
+            }
+            await unlinkFile(path)
+        }
+        const runtime = {
+            rename: failingRename,
+            unlink: failingUnlink,
+        }
+        const stderr = vi.spyOn(process.stderr, 'write').mockImplementation(() => true)
+
+        try {
+            await writeFile(reviewPath, reviewText, 'utf8')
+            await writeFile(manifestPath, oldManifestText, 'utf8')
+
+            await expect(finalizeMain(finalizeArgs(reviewPath, manifestPath, datasetPath), runtime)).resolves.toBe(1)
+            expect(stderr).toHaveBeenCalledWith(
+                expect.stringMatching(/cleanup failure.*rollback failure|rollback failure.*cleanup failure/)
+            )
+            expect(await readFile(datasetPath, 'utf8')).toContain('"relevance":3')
+            expect(await readFile(manifestPath, 'utf8')).toBe(oldManifestText)
+            expect(await readFile(reviewPath, 'utf8')).toBe(reviewText)
+            expect((await readdir(tempRoot)).filter(name => name.endsWith('.tmp') || name.endsWith('.bak'))).toEqual([])
+        } finally {
+            stderr.mockRestore()
             await rm(tempRoot, { recursive: true, force: true })
         }
     })

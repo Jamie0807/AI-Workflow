@@ -22,9 +22,10 @@ export interface FinalizeAnnotationCliOptions {
 
 export interface FinalizeAnnotationRuntimeDependencies {
     rename: typeof rename
+    unlink?: typeof unlink
 }
 
-const DEFAULT_FINALIZE_RUNTIME: FinalizeAnnotationRuntimeDependencies = { rename }
+const DEFAULT_FINALIZE_RUNTIME: FinalizeAnnotationRuntimeDependencies = { rename, unlink }
 
 const HELP_TEXT = `Usage:
   pnpm --filter @ai-workflow/workflow finalize:rag-annotation -- \
@@ -185,8 +186,15 @@ async function pathExists(path: string): Promise<boolean> {
     }
 }
 
-async function removeIfPresent(path: string): Promise<void> {
-    await unlink(path).catch(() => undefined)
+async function removeIfPresent(path: string, unlinkFile: typeof unlink = unlink): Promise<void> {
+    try {
+        await unlinkFile(path)
+    } catch (error) {
+        if (isRecord(error) && error.code === 'ENOENT') {
+            return
+        }
+        throw error
+    }
 }
 
 async function readReviewFile(reviewPath: string): Promise<AnnotationReview[]> {
@@ -274,7 +282,8 @@ export async function writeAtomicOutputs(
     datasetText: string,
     manifestPath: string,
     manifestText: string,
-    renameFile: typeof rename = rename
+    renameFile: typeof rename = rename,
+    unlinkFile: typeof unlink = unlink
 ): Promise<void> {
     await mkdir(dirname(datasetPath), { recursive: true })
     await mkdir(dirname(manifestPath), { recursive: true })
@@ -290,6 +299,9 @@ export async function writeAtomicOutputs(
     let datasetPublished = false
     let manifestPublished = false
     let committed = false
+    let publishError: unknown
+    let failureToThrow: Error | undefined
+    const rollbackFailures: string[] = []
 
     try {
         if (await pathExists(datasetPath)) {
@@ -309,12 +321,20 @@ export async function writeAtomicOutputs(
         manifestPublished = true
         committed = true
     } catch (error) {
-        const rollbackFailures: string[] = []
+        publishError = error
         if (datasetPublished || datasetBackupCreated) {
-            await removeIfPresent(datasetPath)
+            try {
+                await removeIfPresent(datasetPath, unlinkFile)
+            } catch (cleanupError) {
+                rollbackFailures.push(`cleanup failure: dataset target: ${errorMessage(cleanupError)}`)
+            }
         }
         if (manifestPublished || manifestBackupCreated) {
-            await removeIfPresent(manifestPath)
+            try {
+                await removeIfPresent(manifestPath, unlinkFile)
+            } catch (cleanupError) {
+                rollbackFailures.push(`cleanup failure: manifest target: ${errorMessage(cleanupError)}`)
+            }
         }
         if (datasetBackupCreated) {
             try {
@@ -333,18 +353,43 @@ export async function writeAtomicOutputs(
             }
         }
         if (rollbackFailures.length > 0) {
-            throw new Error(`Output publish failed: ${errorMessage(error)}; rollback failure: ${rollbackFailures.join('; ')}`)
+            failureToThrow = new Error(`Output publish failed: ${errorMessage(error)}; rollback failure: ${rollbackFailures.join('; ')}`)
+        } else {
+            failureToThrow = error instanceof Error ? error : new Error(errorMessage(error))
         }
-        throw error
     } finally {
-        await removeIfPresent(datasetTempPath)
-        await removeIfPresent(manifestTempPath)
+        const cleanupFailures: string[] = []
+        const cleanup = async (label: string, path: string): Promise<void> => {
+            try {
+                await removeIfPresent(path, unlinkFile)
+            } catch (cleanupError) {
+                cleanupFailures.push(`${label}: ${errorMessage(cleanupError)}`)
+            }
+        }
+
+        await cleanup('dataset temp', datasetTempPath)
+        await cleanup('manifest temp', manifestTempPath)
         if (committed || datasetBackupRestored) {
-            await removeIfPresent(datasetBackupPath)
+            await cleanup('dataset backup', datasetBackupPath)
         }
         if (committed || manifestBackupRestored) {
-            await removeIfPresent(manifestBackupPath)
+            await cleanup('manifest backup', manifestBackupPath)
         }
+        if (cleanupFailures.length > 0) {
+            const details = cleanupFailures.map(failure => `cleanup failure: ${failure}`)
+            if (publishError !== undefined) {
+                rollbackFailures.push(...details)
+                failureToThrow = new Error(
+                    `Output publish failed: ${errorMessage(publishError)}; rollback failure: ${rollbackFailures.join('; ')}`
+                )
+            } else {
+                failureToThrow = new Error(`Output cleanup failed; cleanup failure: ${details.join('; ')}`)
+            }
+        }
+    }
+
+    if (failureToThrow) {
+        throw failureToThrow
     }
 }
 
@@ -388,7 +433,14 @@ export async function main(
         const datasetText = serializeDataset(dataset)
         const datasetSha256 = createHash('sha256').update(datasetText, 'utf8').digest('hex')
         const reviewedManifest = buildReviewedManifest(manifest, options.annotator, options.reviewedAt, datasetSha256)
-        await writeAtomicOutputs(datasetPath, datasetText, manifestPath, `${JSON.stringify(reviewedManifest, null, 2)}\n`, runtime.rename)
+        await writeAtomicOutputs(
+            datasetPath,
+            datasetText,
+            manifestPath,
+            `${JSON.stringify(reviewedManifest, null, 2)}\n`,
+            runtime.rename,
+            runtime.unlink ?? unlink
+        )
 
         process.stdout.write(`[finalize:rag-annotation] wrote ${datasetPath}\n`)
         process.stdout.write(`[finalize:rag-annotation] updated ${manifestPath}\n`)

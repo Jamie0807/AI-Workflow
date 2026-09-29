@@ -13,12 +13,14 @@
 
 - rollback 恢复不再吞掉 rename 错误；恢复失败会抛出包含 `rollback failure` 的错误。
 - 只有确认对应 backup 已恢复，或两个目标已成功提交，才会删除该 backup；恢复失败的 backup 会保留供人工恢复。
+- `unlink` 清理错误不再被吞掉；partial dataset 清理失败会进入 `rollback failure`，并保留现场供恢复。
 - 新增直接 writer 的 restore-failure 测试，以及真实 finalize CLI 的双旧文件、第二次发布失败回滚测试。
+- 新增无旧 dataset 时 dataset 清理失败的 CLI 场景，验证非零退出、错误信息、目标状态、backup 协议和 review 不变。
 - 未生成 baseline，人工标签仍只来自 review。
 
 ## 最终验证
 
-- `pnpm --filter @ai-workflow/ai-engine exec vitest run src/knowledge/evaluation/__tests__/annotation.test.ts src/knowledge/evaluation/__tests__/annotation-cli.test.ts`：2 个文件、47/47 通过（annotation 17、annotation CLI 30）。
+- `pnpm --filter @ai-workflow/ai-engine exec vitest run src/knowledge/evaluation/__tests__/annotation.test.ts src/knowledge/evaluation/__tests__/annotation-cli.test.ts`：2 个文件、48/48 通过（annotation 17、annotation CLI 31）。
 - `pnpm --filter @ai-workflow/ai-engine typecheck`：通过。
 - `pnpm --filter @ai-workflow/workflow typecheck`：通过。
 - `pnpm exec prettier --check apps/workflow/scripts/finalize-rag-annotation.ts packages/ai-engine/src/knowledge/evaluation/__tests__/annotation-cli.test.ts .superpowers/sdd/task-5-report.md`：通过。
