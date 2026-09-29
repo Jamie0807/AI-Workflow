@@ -1,9 +1,11 @@
+import { createHash } from 'node:crypto'
 import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 
 import { describe, expect, it, vi } from 'vitest'
 
+import { main as finalizeMain } from '../../../../../../apps/workflow/scripts/finalize-rag-annotation'
 import {
     type AnnotationCorpusChunk,
     type AnnotationRuntimeDependencies,
@@ -14,6 +16,7 @@ import {
     parseAnnotationCliArgs,
 } from '../../../../../../apps/workflow/scripts/prepare-rag-annotation'
 import type { RetrievalMode, RetrievalResult } from '../../types'
+import type { AnnotationManifest, AnnotationReview } from '../annotation'
 import { parseAnnotationQueries } from '../annotation'
 
 const QUERY_PATH = 'docs/rag/evaluation/prometheus-global-guardian-v1.queries.jsonl'
@@ -39,6 +42,62 @@ function retrievalResult(overrides: Partial<RetrievalResult> = {}): RetrievalRes
         documentId: 'document-1',
         knowledgeBaseId: 'kb-1',
         score: 0.8,
+        ...overrides,
+    }
+}
+
+function annotationManifest(overrides: Partial<AnnotationManifest> = {}): AnnotationManifest {
+    return {
+        datasetVersion: 'prometheus-global-guardian-v1',
+        knowledgeBaseId: 'kb-1',
+        knowledgeBaseName: '知识库',
+        documentId: 'document-1',
+        documentName: 'document.md',
+        documentSha256: 'document-hash',
+        chunkCount: 2,
+        chunkSize: 500,
+        chunkOverlap: 50,
+        embeddingProvider: 'ollama',
+        embeddingModel: 'mxbai-embed-large:latest',
+        embeddingDimensions: 1024,
+        queryCount: 1,
+        annotationGuideVersion: 'v1',
+        annotationStatus: 'candidate',
+        annotator: null,
+        reviewedAt: null,
+        datasetSha256: null,
+        ...overrides,
+    }
+}
+
+function annotationReview(overrides: Partial<AnnotationReview> = {}): AnnotationReview {
+    return {
+        id: 'query-1',
+        query: '灾害风险等级如何判断？',
+        intent: 'risk-levels',
+        knowledgeBaseId: 'kb-1',
+        candidates: [
+            {
+                chunkId: 'document-1_0',
+                content: '高相关内容',
+                chunkIndex: 0,
+                documentId: 'document-1',
+                knowledgeBaseId: 'kb-1',
+                candidateSources: { vector: { rank: 1, score: 0.9 } },
+                humanRelevance: 3,
+                rationale: '直接回答问题。',
+            },
+            {
+                chunkId: 'document-1_1',
+                content: '无关内容',
+                chunkIndex: 1,
+                documentId: 'document-1',
+                knowledgeBaseId: 'kb-1',
+                candidateSources: {},
+                humanRelevance: 0,
+                rationale: '',
+            },
+        ],
         ...overrides,
     }
 }
@@ -282,6 +341,100 @@ describe('prepare-rag-annotation CLI', () => {
             })
             expect(client.$disconnect).toHaveBeenCalledTimes(1)
             expect(pool.end).toHaveBeenCalledTimes(1)
+        } finally {
+            await rm(tempRoot, { recursive: true, force: true })
+        }
+    })
+})
+
+describe('finalize-rag-annotation CLI', () => {
+    it('fails with exit code 2 when any human decision is null', async () => {
+        const tempRoot = await mkdtemp(join(tmpdir(), 'rag-annotation-finalize-'))
+        const reviewPath = join(tempRoot, 'review.jsonl')
+        const manifestPath = join(tempRoot, 'manifest.json')
+        const datasetPath = join(tempRoot, 'dataset.jsonl')
+        const review = annotationReview({
+            candidates: annotationReview().candidates.map(candidate => ({ ...candidate, humanRelevance: null, rationale: '' })),
+        })
+
+        try {
+            await writeFile(reviewPath, `${JSON.stringify(review)}\n`, 'utf8')
+            await writeFile(manifestPath, `${JSON.stringify(annotationManifest(), null, 2)}\n`, 'utf8')
+
+            await expect(
+                finalizeMain(['--review', reviewPath, '--manifest', manifestPath, '--dataset', datasetPath, '--annotator', 'project-owner'])
+            ).resolves.toBe(2)
+
+            await expect(readFile(datasetPath, 'utf8')).rejects.toThrow()
+            expect(JSON.parse(await readFile(manifestPath, 'utf8'))).toMatchObject({ annotationStatus: 'candidate' })
+        } finally {
+            await rm(tempRoot, { recursive: true, force: true })
+        }
+    })
+
+    it('writes only non-zero relevance labels and atomically records the dataset hash', async () => {
+        const tempRoot = await mkdtemp(join(tmpdir(), 'rag-annotation-finalize-'))
+        const reviewPath = join(tempRoot, 'review.jsonl')
+        const manifestPath = join(tempRoot, 'manifest.json')
+        const datasetPath = join(tempRoot, 'dataset.jsonl')
+        const reviewText = `${JSON.stringify(annotationReview())}\n`
+
+        try {
+            await writeFile(reviewPath, reviewText, 'utf8')
+            await writeFile(manifestPath, `${JSON.stringify(annotationManifest(), null, 2)}\n`, 'utf8')
+
+            await expect(
+                finalizeMain([
+                    '--review',
+                    reviewPath,
+                    '--manifest',
+                    manifestPath,
+                    '--dataset',
+                    datasetPath,
+                    '--annotator',
+                    'project-owner',
+                    '--reviewed-at',
+                    '2026-09-29T12:00:00.000Z',
+                ])
+            ).resolves.toBe(0)
+
+            const datasetText = await readFile(datasetPath, 'utf8')
+            expect(datasetText).toContain('"relevance":3')
+            expect(datasetText).not.toContain('"relevance":0')
+            expect(JSON.parse(datasetText)).toEqual({
+                id: 'query-1',
+                query: '灾害风险等级如何判断？',
+                knowledgeBaseId: 'kb-1',
+                relevantChunks: [{ chunkId: 'document-1_0', relevance: 3 }],
+            })
+
+            const manifest = JSON.parse(await readFile(manifestPath, 'utf8')) as AnnotationManifest
+            expect(manifest).toMatchObject({
+                annotationStatus: 'human-reviewed',
+                annotator: 'project-owner',
+                reviewedAt: '2026-09-29T12:00:00.000Z',
+                datasetSha256: createHash('sha256').update(datasetText, 'utf8').digest('hex'),
+            })
+            expect(await readFile(reviewPath, 'utf8')).toBe(reviewText)
+        } finally {
+            await rm(tempRoot, { recursive: true, force: true })
+        }
+    })
+
+    it('fails with exit code 2 when the review Knowledge Base differs from the manifest', async () => {
+        const tempRoot = await mkdtemp(join(tmpdir(), 'rag-annotation-finalize-'))
+        const reviewPath = join(tempRoot, 'review.jsonl')
+        const manifestPath = join(tempRoot, 'manifest.json')
+        const datasetPath = join(tempRoot, 'dataset.jsonl')
+
+        try {
+            await writeFile(reviewPath, `${JSON.stringify(annotationReview())}\n`, 'utf8')
+            await writeFile(manifestPath, `${JSON.stringify(annotationManifest({ knowledgeBaseId: 'other-kb' }), null, 2)}\n`, 'utf8')
+
+            await expect(
+                finalizeMain(['--review', reviewPath, '--manifest', manifestPath, '--dataset', datasetPath, '--annotator', 'project-owner'])
+            ).resolves.toBe(2)
+            await expect(readFile(datasetPath, 'utf8')).rejects.toThrow()
         } finally {
             await rm(tempRoot, { recursive: true, force: true })
         }
