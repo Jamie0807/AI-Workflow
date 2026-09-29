@@ -1,0 +1,2817 @@
+{
+    "generatedAt": "2026-09-29T16:51:25.639Z",
+    "baselineStatus": "single-annotator initial baseline",
+    "dataset": {
+        "path": "docs/rag/evaluation/prometheus-global-guardian-v1.jsonl",
+        "sha256": "9c3b6b988ed65c59001cb3913a7590f2db73dcd5d0270c16fa45a2ac927df817",
+        "sampleCount": 24
+    },
+    "reports": [
+        {
+            "mode": "vector",
+            "config": {
+                "mode": "vector",
+                "topK": 5,
+                "knowledgeBaseIds": ["cmtjxa48x000dyygofy7skckk"],
+                "threshold": 0.2,
+                "vectorWeight": 0.7
+            },
+            "sampleCount": 24,
+            "metrics": {
+                "precisionAtK": 0.8750000000000001,
+                "recallAtK": 0.19850556155363885,
+                "mrrAtK": 0.8958333333333334,
+                "ndcgAtK": 0.4741385471031123
+            },
+            "latencyMs": {
+                "p50": 20.620292000000063,
+                "p95": 27.31008399999996
+            },
+            "queries": [
+                {
+                    "sampleId": "pgg-v1-scope-boundary-direct",
+                    "query": "Prometheus Global Guardian 知识库如何区分实时事实、知识规则和分析判断？",
+                    "retrievedChunkIds": [
+                        "cmtjxadio000eyygov3gl3za5_0",
+                        "cmtjxadio000eyygov3gl3za5_1",
+                        "cmtjxadio000eyygov3gl3za5_11",
+                        "cmtjxadio000eyygov3gl3za5_8",
+                        "cmtjxadio000eyygov3gl3za5_23"
+                    ],
+                    "retrievedResults": [
+                        {
+                            "chunkId": "cmtjxadio000eyygov3gl3za5_0",
+                            "score": 0.9093262
+                        },
+                        {
+                            "chunkId": "cmtjxadio000eyygov3gl3za5_1",
+                            "score": 0.8164057
+                        },
+                        {
+                            "chunkId": "cmtjxadio000eyygov3gl3za5_11",
+                            "score": 0.7189443
+                        },
+                        {
+                            "chunkId": "cmtjxadio000eyygov3gl3za5_8",
+                            "score": 0.71762425
+                        },
+                        {
+                            "chunkId": "cmtjxadio000eyygov3gl3za5_23",
+                            "score": 0.71579045
+                        }
+                    ],
+                    "metrics": {
+                        "precisionAtK": 0.6,
+                        "recallAtK": 0.12,
+                        "mrrAtK": 0.5,
+                        "ndcgAtK": 0.4162730828853619
+                    },
+                    "latencyMs": 670.910042
+                },
+                {
+                    "sampleId": "pgg-v1-scope-boundary-synonym",
+                    "query": "这个助手的灾害分析回答边界是什么，能否替代官方预警、应急调度或现场指挥？",
+                    "retrievedChunkIds": [
+                        "cmtjxadio000eyygov3gl3za5_14",
+                        "cmtjxadio000eyygov3gl3za5_18",
+                        "cmtjxadio000eyygov3gl3za5_25",
+                        "cmtjxadio000eyygov3gl3za5_1",
+                        "cmtjxadio000eyygov3gl3za5_20"
+                    ],
+                    "retrievedResults": [
+                        {
+                            "chunkId": "cmtjxadio000eyygov3gl3za5_14",
+                            "score": 0.6539794
+                        },
+                        {
+                            "chunkId": "cmtjxadio000eyygov3gl3za5_18",
+                            "score": 0.61884683
+                        },
+                        {
+                            "chunkId": "cmtjxadio000eyygov3gl3za5_25",
+                            "score": 0.6108173
+                        },
+                        {
+                            "chunkId": "cmtjxadio000eyygov3gl3za5_1",
+                            "score": 0.6107061
+                        },
+                        {
+                            "chunkId": "cmtjxadio000eyygov3gl3za5_20",
+                            "score": 0.6069879
+                        }
+                    ],
+                    "metrics": {
+                        "precisionAtK": 1,
+                        "recallAtK": 0.19230769230769232,
+                        "mrrAtK": 1,
+                        "ndcgAtK": 0.744865901816983
+                    },
+                    "latencyMs": 27.31008399999996
+                },
+                {
+                    "sampleId": "pgg-v1-scope-boundary-keywords",
+                    "query": "实时事实｜知识规则｜分析判断｜非官方预警系统｜现场指挥",
+                    "retrievedChunkIds": [
+                        "cmtjxadio000eyygov3gl3za5_1",
+                        "cmtjxadio000eyygov3gl3za5_14",
+                        "cmtjxadio000eyygov3gl3za5_28",
+                        "cmtjxadio000eyygov3gl3za5_4",
+                        "cmtjxadio000eyygov3gl3za5_3"
+                    ],
+                    "retrievedResults": [
+                        {
+                            "chunkId": "cmtjxadio000eyygov3gl3za5_1",
+                            "score": 0.62120193
+                        },
+                        {
+                            "chunkId": "cmtjxadio000eyygov3gl3za5_14",
+                            "score": 0.6203121
+                        },
+                        {
+                            "chunkId": "cmtjxadio000eyygov3gl3za5_28",
+                            "score": 0.6199343
+                        },
+                        {
+                            "chunkId": "cmtjxadio000eyygov3gl3za5_4",
+                            "score": 0.60742545
+                        },
+                        {
+                            "chunkId": "cmtjxadio000eyygov3gl3za5_3",
+                            "score": 0.60716015
+                        }
+                    ],
+                    "metrics": {
+                        "precisionAtK": 1,
+                        "recallAtK": 0.19230769230769232,
+                        "mrrAtK": 1,
+                        "ndcgAtK": 0.8550954896482754
+                    },
+                    "latencyMs": 22.35916700000007
+                },
+                {
+                    "sampleId": "pgg-v1-workflow-fields-direct",
+                    "query": "hazard_context、location 和 language 分别如何作为工作流输入？",
+                    "retrievedChunkIds": [
+                        "cmtjxadio000eyygov3gl3za5_25",
+                        "cmtjxadio000eyygov3gl3za5_2",
+                        "cmtjxadio000eyygov3gl3za5_1",
+                        "cmtjxadio000eyygov3gl3za5_3",
+                        "cmtjxadio000eyygov3gl3za5_29"
+                    ],
+                    "retrievedResults": [
+                        {
+                            "chunkId": "cmtjxadio000eyygov3gl3za5_25",
+                            "score": 0.84077764
+                        },
+                        {
+                            "chunkId": "cmtjxadio000eyygov3gl3za5_2",
+                            "score": 0.81453776
+                        },
+                        {
+                            "chunkId": "cmtjxadio000eyygov3gl3za5_1",
+                            "score": 0.7975973
+                        },
+                        {
+                            "chunkId": "cmtjxadio000eyygov3gl3za5_3",
+                            "score": 0.75125206
+                        },
+                        {
+                            "chunkId": "cmtjxadio000eyygov3gl3za5_29",
+                            "score": 0.742287
+                        }
+                    ],
+                    "metrics": {
+                        "precisionAtK": 1,
+                        "recallAtK": 0.2631578947368421,
+                        "mrrAtK": 1,
+                        "ndcgAtK": 0.6846336802957327
+                    },
+                    "latencyMs": 18.45116700000017
+                },
+                {
+                    "sampleId": "pgg-v1-workflow-fields-synonym",
+                    "query": "total、byType、recent 字段各表示什么，recent 有哪些覆盖限制？",
+                    "retrievedChunkIds": [
+                        "cmtjxadio000eyygov3gl3za5_3",
+                        "cmtjxadio000eyygov3gl3za5_4",
+                        "cmtjxadio000eyygov3gl3za5_27",
+                        "cmtjxadio000eyygov3gl3za5_25",
+                        "cmtjxadio000eyygov3gl3za5_22"
+                    ],
+                    "retrievedResults": [
+                        {
+                            "chunkId": "cmtjxadio000eyygov3gl3za5_3",
+                            "score": 0.7884355
+                        },
+                        {
+                            "chunkId": "cmtjxadio000eyygov3gl3za5_4",
+                            "score": 0.7707075
+                        },
+                        {
+                            "chunkId": "cmtjxadio000eyygov3gl3za5_27",
+                            "score": 0.73850864
+                        },
+                        {
+                            "chunkId": "cmtjxadio000eyygov3gl3za5_25",
+                            "score": 0.7249328
+                        },
+                        {
+                            "chunkId": "cmtjxadio000eyygov3gl3za5_22",
+                            "score": 0.685592
+                        }
+                    ],
+                    "metrics": {
+                        "precisionAtK": 0.8,
+                        "recallAtK": 0.23529411764705882,
+                        "mrrAtK": 1,
+                        "ndcgAtK": 0.7080672294733831
+                    },
+                    "latencyMs": 18.03133300000013
+                },
+                {
+                    "sampleId": "pgg-v1-workflow-fields-keywords",
+                    "query": "hazard_context｜total｜byType｜recent｜location｜language｜空或不完整快照",
+                    "retrievedChunkIds": [
+                        "cmtjxadio000eyygov3gl3za5_25",
+                        "cmtjxadio000eyygov3gl3za5_2",
+                        "cmtjxadio000eyygov3gl3za5_1",
+                        "cmtjxadio000eyygov3gl3za5_4",
+                        "cmtjxadio000eyygov3gl3za5_26"
+                    ],
+                    "retrievedResults": [
+                        {
+                            "chunkId": "cmtjxadio000eyygov3gl3za5_25",
+                            "score": 0.7801577
+                        },
+                        {
+                            "chunkId": "cmtjxadio000eyygov3gl3za5_2",
+                            "score": 0.76122844
+                        },
+                        {
+                            "chunkId": "cmtjxadio000eyygov3gl3za5_1",
+                            "score": 0.7284752
+                        },
+                        {
+                            "chunkId": "cmtjxadio000eyygov3gl3za5_4",
+                            "score": 0.71343744
+                        },
+                        {
+                            "chunkId": "cmtjxadio000eyygov3gl3za5_26",
+                            "score": 0.6866708
+                        }
+                    ],
+                    "metrics": {
+                        "precisionAtK": 1,
+                        "recallAtK": 0.2777777777777778,
+                        "mrrAtK": 1,
+                        "ndcgAtK": 0.6107549150810954
+                    },
+                    "latencyMs": 18.34616700000015
+                },
+                {
+                    "sampleId": "pgg-v1-hazard-types-direct",
+                    "query": "统一灾害类型编码与各类型的分析重点如何对应？",
+                    "retrievedChunkIds": [
+                        "cmtjxadio000eyygov3gl3za5_14",
+                        "cmtjxadio000eyygov3gl3za5_25",
+                        "cmtjxadio000eyygov3gl3za5_1",
+                        "cmtjxadio000eyygov3gl3za5_3",
+                        "cmtjxadio000eyygov3gl3za5_23"
+                    ],
+                    "retrievedResults": [
+                        {
+                            "chunkId": "cmtjxadio000eyygov3gl3za5_14",
+                            "score": 0.60613966
+                        },
+                        {
+                            "chunkId": "cmtjxadio000eyygov3gl3za5_25",
+                            "score": 0.55351025
+                        },
+                        {
+                            "chunkId": "cmtjxadio000eyygov3gl3za5_1",
+                            "score": 0.5429769
+                        },
+                        {
+                            "chunkId": "cmtjxadio000eyygov3gl3za5_3",
+                            "score": 0.5424456
+                        },
+                        {
+                            "chunkId": "cmtjxadio000eyygov3gl3za5_23",
+                            "score": 0.5330608
+                        }
+                    ],
+                    "metrics": {
+                        "precisionAtK": 0.8,
+                        "recallAtK": 0.16666666666666666,
+                        "mrrAtK": 1,
+                        "ndcgAtK": 0.3352774199892339
+                    },
+                    "latencyMs": 20.858208999999988
+                },
+                {
+                    "sampleId": "pgg-v1-hazard-types-synonym",
+                    "query": "遇到 UNKNOWN 或 DisasterAware 的额外类型编码时，Guardian 应该如何处理？",
+                    "retrievedChunkIds": [
+                        "cmtjxadio000eyygov3gl3za5_13",
+                        "cmtjxadio000eyygov3gl3za5_7",
+                        "cmtjxadio000eyygov3gl3za5_5",
+                        "cmtjxadio000eyygov3gl3za5_2",
+                        "cmtjxadio000eyygov3gl3za5_29"
+                    ],
+                    "retrievedResults": [
+                        {
+                            "chunkId": "cmtjxadio000eyygov3gl3za5_13",
+                            "score": 0.85600436
+                        },
+                        {
+                            "chunkId": "cmtjxadio000eyygov3gl3za5_7",
+                            "score": 0.8261113
+                        },
+                        {
+                            "chunkId": "cmtjxadio000eyygov3gl3za5_5",
+                            "score": 0.7702207
+                        },
+                        {
+                            "chunkId": "cmtjxadio000eyygov3gl3za5_2",
+                            "score": 0.76667464
+                        },
+                        {
+                            "chunkId": "cmtjxadio000eyygov3gl3za5_29",
+                            "score": 0.7581906
+                        }
+                    ],
+                    "metrics": {
+                        "precisionAtK": 1,
+                        "recallAtK": 0.21739130434782608,
+                        "mrrAtK": 1,
+                        "ndcgAtK": 0.3270846990551049
+                    },
+                    "latencyMs": 20.2426660000001
+                },
+                {
+                    "sampleId": "pgg-v1-hazard-types-keywords",
+                    "query": "灾害类型编码与分析重点：EARTHQUAKE｜FLOOD｜VOLCANO｜WILDFIRE｜TROPICAL_CYCLONE｜STORM｜DROUGHT｜TSUNAMI｜LANDSLIDE",
+                    "retrievedChunkIds": [
+                        "cmtjxadio000eyygov3gl3za5_14",
+                        "cmtjxadio000eyygov3gl3za5_28",
+                        "cmtjxadio000eyygov3gl3za5_2",
+                        "cmtjxadio000eyygov3gl3za5_1",
+                        "cmtjxadio000eyygov3gl3za5_26"
+                    ],
+                    "retrievedResults": [
+                        {
+                            "chunkId": "cmtjxadio000eyygov3gl3za5_14",
+                            "score": 0.6481739
+                        },
+                        {
+                            "chunkId": "cmtjxadio000eyygov3gl3za5_28",
+                            "score": 0.62325144
+                        },
+                        {
+                            "chunkId": "cmtjxadio000eyygov3gl3za5_2",
+                            "score": 0.6193046
+                        },
+                        {
+                            "chunkId": "cmtjxadio000eyygov3gl3za5_1",
+                            "score": 0.6165546
+                        },
+                        {
+                            "chunkId": "cmtjxadio000eyygov3gl3za5_26",
+                            "score": 0.615894
+                        }
+                    ],
+                    "metrics": {
+                        "precisionAtK": 1,
+                        "recallAtK": 0.19230769230769232,
+                        "mrrAtK": 1,
+                        "ndcgAtK": 0.32944516002153235
+                    },
+                    "latencyMs": 21.03737500000011
+                },
+                {
+                    "sampleId": "pgg-v1-severity-sources-direct",
+                    "query": "ADVISORY、WATCH、WARNING 在 Guardian 中分别表示什么？",
+                    "retrievedChunkIds": [
+                        "cmtjxadio000eyygov3gl3za5_8",
+                        "cmtjxadio000eyygov3gl3za5_5",
+                        "cmtjxadio000eyygov3gl3za5_2",
+                        "cmtjxadio000eyygov3gl3za5_1",
+                        "cmtjxadio000eyygov3gl3za5_23"
+                    ],
+                    "retrievedResults": [
+                        {
+                            "chunkId": "cmtjxadio000eyygov3gl3za5_8",
+                            "score": 0.77833396
+                        },
+                        {
+                            "chunkId": "cmtjxadio000eyygov3gl3za5_5",
+                            "score": 0.72342926
+                        },
+                        {
+                            "chunkId": "cmtjxadio000eyygov3gl3za5_2",
+                            "score": 0.70573545
+                        },
+                        {
+                            "chunkId": "cmtjxadio000eyygov3gl3za5_1",
+                            "score": 0.7012407
+                        },
+                        {
+                            "chunkId": "cmtjxadio000eyygov3gl3za5_23",
+                            "score": 0.68857974
+                        }
+                    ],
+                    "metrics": {
+                        "precisionAtK": 0.4,
+                        "recallAtK": 0.08695652173913043,
+                        "mrrAtK": 0.3333333333333333,
+                        "ndcgAtK": 0.07245225517586232
+                    },
+                    "latencyMs": 21.93008399999985
+                },
+                {
+                    "sampleId": "pgg-v1-severity-sources-synonym",
+                    "query": "USGS、NASA EONET 和 GDACS 的数据来源及严重程度映射有什么差异？",
+                    "retrievedChunkIds": [
+                        "cmtjxadio000eyygov3gl3za5_23",
+                        "cmtjxadio000eyygov3gl3za5_8",
+                        "cmtjxadio000eyygov3gl3za5_11",
+                        "cmtjxadio000eyygov3gl3za5_10",
+                        "cmtjxadio000eyygov3gl3za5_29"
+                    ],
+                    "retrievedResults": [
+                        {
+                            "chunkId": "cmtjxadio000eyygov3gl3za5_23",
+                            "score": 0.82512474
+                        },
+                        {
+                            "chunkId": "cmtjxadio000eyygov3gl3za5_8",
+                            "score": 0.80144
+                        },
+                        {
+                            "chunkId": "cmtjxadio000eyygov3gl3za5_11",
+                            "score": 0.7567009
+                        },
+                        {
+                            "chunkId": "cmtjxadio000eyygov3gl3za5_10",
+                            "score": 0.7184745
+                        },
+                        {
+                            "chunkId": "cmtjxadio000eyygov3gl3za5_29",
+                            "score": 0.6968188
+                        }
+                    ],
+                    "metrics": {
+                        "precisionAtK": 0.6,
+                        "recallAtK": 0.11538461538461539,
+                        "mrrAtK": 0.3333333333333333,
+                        "ndcgAtK": 0.2474728762882121
+                    },
+                    "latencyMs": 23.992749999999887
+                },
+                {
+                    "sampleId": "pgg-v1-severity-sources-keywords",
+                    "query": "DisasterAware 原始字段｜统一 Hazard 字段｜USGS magnitude｜GDACS Red Orange｜NASA ADVISORY",
+                    "retrievedChunkIds": [
+                        "cmtjxadio000eyygov3gl3za5_13",
+                        "cmtjxadio000eyygov3gl3za5_7",
+                        "cmtjxadio000eyygov3gl3za5_8",
+                        "cmtjxadio000eyygov3gl3za5_23",
+                        "cmtjxadio000eyygov3gl3za5_1"
+                    ],
+                    "retrievedResults": [
+                        {
+                            "chunkId": "cmtjxadio000eyygov3gl3za5_13",
+                            "score": 0.7930684
+                        },
+                        {
+                            "chunkId": "cmtjxadio000eyygov3gl3za5_7",
+                            "score": 0.74804014
+                        },
+                        {
+                            "chunkId": "cmtjxadio000eyygov3gl3za5_8",
+                            "score": 0.7330017
+                        },
+                        {
+                            "chunkId": "cmtjxadio000eyygov3gl3za5_23",
+                            "score": 0.7308703
+                        },
+                        {
+                            "chunkId": "cmtjxadio000eyygov3gl3za5_1",
+                            "score": 0.72863364
+                        }
+                    ],
+                    "metrics": {
+                        "precisionAtK": 1,
+                        "recallAtK": 0.25,
+                        "mrrAtK": 1,
+                        "ndcgAtK": 0.8595377572759725
+                    },
+                    "latencyMs": 19.91358299999979
+                },
+                {
+                    "sampleId": "pgg-v1-hazard-guidance-direct",
+                    "query": "在没有完整地点、时间、强度或官方预警时，灾害建议应如何表述？",
+                    "retrievedChunkIds": [
+                        "cmtjxadio000eyygov3gl3za5_14",
+                        "cmtjxadio000eyygov3gl3za5_2",
+                        "cmtjxadio000eyygov3gl3za5_25",
+                        "cmtjxadio000eyygov3gl3za5_27",
+                        "cmtjxadio000eyygov3gl3za5_26"
+                    ],
+                    "retrievedResults": [
+                        {
+                            "chunkId": "cmtjxadio000eyygov3gl3za5_14",
+                            "score": 0.651741
+                        },
+                        {
+                            "chunkId": "cmtjxadio000eyygov3gl3za5_2",
+                            "score": 0.6449862
+                        },
+                        {
+                            "chunkId": "cmtjxadio000eyygov3gl3za5_25",
+                            "score": 0.640208
+                        },
+                        {
+                            "chunkId": "cmtjxadio000eyygov3gl3za5_27",
+                            "score": 0.6266909
+                        },
+                        {
+                            "chunkId": "cmtjxadio000eyygov3gl3za5_26",
+                            "score": 0.6249327
+                        }
+                    ],
+                    "metrics": {
+                        "precisionAtK": 1,
+                        "recallAtK": 0.18518518518518517,
+                        "mrrAtK": 1,
+                        "ndcgAtK": 0.5092595013431673
+                    },
+                    "latencyMs": 21.20054099999993
+                },
+                {
+                    "sampleId": "pgg-v1-hazard-guidance-synonym",
+                    "query": "地震、洪水或野火的通用准备建议有哪些，哪些行动不能被回答宣称已经执行？",
+                    "retrievedChunkIds": [
+                        "cmtjxadio000eyygov3gl3za5_17",
+                        "cmtjxadio000eyygov3gl3za5_26",
+                        "cmtjxadio000eyygov3gl3za5_16",
+                        "cmtjxadio000eyygov3gl3za5_5",
+                        "cmtjxadio000eyygov3gl3za5_20"
+                    ],
+                    "retrievedResults": [
+                        {
+                            "chunkId": "cmtjxadio000eyygov3gl3za5_17",
+                            "score": 0.82014775
+                        },
+                        {
+                            "chunkId": "cmtjxadio000eyygov3gl3za5_26",
+                            "score": 0.77310866
+                        },
+                        {
+                            "chunkId": "cmtjxadio000eyygov3gl3za5_16",
+                            "score": 0.77221465
+                        },
+                        {
+                            "chunkId": "cmtjxadio000eyygov3gl3za5_5",
+                            "score": 0.77030003
+                        },
+                        {
+                            "chunkId": "cmtjxadio000eyygov3gl3za5_20",
+                            "score": 0.7604865
+                        }
+                    ],
+                    "metrics": {
+                        "precisionAtK": 1,
+                        "recallAtK": 0.19230769230769232,
+                        "mrrAtK": 1,
+                        "ndcgAtK": 0.39108426356790227
+                    },
+                    "latencyMs": 20.3287499999999
+                },
+                {
+                    "sampleId": "pgg-v1-hazard-guidance-keywords",
+                    "query": "地震：余震｜建筑安全｜海啸；洪水：积水｜水位｜道路；野火：风向｜烟雾｜疏散",
+                    "retrievedChunkIds": [
+                        "cmtjxadio000eyygov3gl3za5_17",
+                        "cmtjxadio000eyygov3gl3za5_19",
+                        "cmtjxadio000eyygov3gl3za5_16",
+                        "cmtjxadio000eyygov3gl3za5_26",
+                        "cmtjxadio000eyygov3gl3za5_5"
+                    ],
+                    "retrievedResults": [
+                        {
+                            "chunkId": "cmtjxadio000eyygov3gl3za5_17",
+                            "score": 0.8056202
+                        },
+                        {
+                            "chunkId": "cmtjxadio000eyygov3gl3za5_19",
+                            "score": 0.7879195
+                        },
+                        {
+                            "chunkId": "cmtjxadio000eyygov3gl3za5_16",
+                            "score": 0.7817755
+                        },
+                        {
+                            "chunkId": "cmtjxadio000eyygov3gl3za5_26",
+                            "score": 0.7762761
+                        },
+                        {
+                            "chunkId": "cmtjxadio000eyygov3gl3za5_5",
+                            "score": 0.7740891
+                        }
+                    ],
+                    "metrics": {
+                        "precisionAtK": 1,
+                        "recallAtK": 0.21739130434782608,
+                        "mrrAtK": 1,
+                        "ndcgAtK": 0.8165832016561192
+                    },
+                    "latencyMs": 20.620292000000063
+                },
+                {
+                    "sampleId": "pgg-v1-risk-levels-direct",
+                    "query": "LOW、MEDIUM、HIGH、CRITICAL 四个风险等级分别依据什么？",
+                    "retrievedChunkIds": [
+                        "cmtjxadio000eyygov3gl3za5_21",
+                        "cmtjxadio000eyygov3gl3za5_14",
+                        "cmtjxadio000eyygov3gl3za5_3",
+                        "cmtjxadio000eyygov3gl3za5_15",
+                        "cmtjxadio000eyygov3gl3za5_5"
+                    ],
+                    "retrievedResults": [
+                        {
+                            "chunkId": "cmtjxadio000eyygov3gl3za5_21",
+                            "score": 0.66809577
+                        },
+                        {
+                            "chunkId": "cmtjxadio000eyygov3gl3za5_14",
+                            "score": 0.6355044
+                        },
+                        {
+                            "chunkId": "cmtjxadio000eyygov3gl3za5_3",
+                            "score": 0.61997926
+                        },
+                        {
+                            "chunkId": "cmtjxadio000eyygov3gl3za5_15",
+                            "score": 0.6196027
+                        },
+                        {
+                            "chunkId": "cmtjxadio000eyygov3gl3za5_5",
+                            "score": 0.60827523
+                        }
+                    ],
+                    "metrics": {
+                        "precisionAtK": 1,
+                        "recallAtK": 0.18518518518518517,
+                        "mrrAtK": 1,
+                        "ndcgAtK": 0.47267367657606424
+                    },
+                    "latencyMs": 22.475584000000026
+                },
+                {
+                    "sampleId": "pgg-v1-risk-levels-synonym",
+                    "query": "为什么只有事件数量不能单独触发 HIGH 或 CRITICAL，信息不足时应如何选择等级？",
+                    "retrievedChunkIds": [
+                        "cmtjxadio000eyygov3gl3za5_21",
+                        "cmtjxadio000eyygov3gl3za5_4",
+                        "cmtjxadio000eyygov3gl3za5_23",
+                        "cmtjxadio000eyygov3gl3za5_1",
+                        "cmtjxadio000eyygov3gl3za5_25"
+                    ],
+                    "retrievedResults": [
+                        {
+                            "chunkId": "cmtjxadio000eyygov3gl3za5_21",
+                            "score": 0.7786859
+                        },
+                        {
+                            "chunkId": "cmtjxadio000eyygov3gl3za5_4",
+                            "score": 0.757633
+                        },
+                        {
+                            "chunkId": "cmtjxadio000eyygov3gl3za5_23",
+                            "score": 0.71082544
+                        },
+                        {
+                            "chunkId": "cmtjxadio000eyygov3gl3za5_1",
+                            "score": 0.70866024
+                        },
+                        {
+                            "chunkId": "cmtjxadio000eyygov3gl3za5_25",
+                            "score": 0.70862806
+                        }
+                    ],
+                    "metrics": {
+                        "precisionAtK": 0.8,
+                        "recallAtK": 0.14814814814814814,
+                        "mrrAtK": 1,
+                        "ndcgAtK": 0.2508423570509853
+                    },
+                    "latencyMs": 17.379666999999927
+                },
+                {
+                    "sampleId": "pgg-v1-risk-levels-keywords",
+                    "query": "risk_level：LOW｜MEDIUM｜HIGH｜CRITICAL｜WARNING｜叠加灾害｜证据不足",
+                    "retrievedChunkIds": [
+                        "cmtjxadio000eyygov3gl3za5_21",
+                        "cmtjxadio000eyygov3gl3za5_25",
+                        "cmtjxadio000eyygov3gl3za5_23",
+                        "cmtjxadio000eyygov3gl3za5_4",
+                        "cmtjxadio000eyygov3gl3za5_2"
+                    ],
+                    "retrievedResults": [
+                        {
+                            "chunkId": "cmtjxadio000eyygov3gl3za5_21",
+                            "score": 0.81263596
+                        },
+                        {
+                            "chunkId": "cmtjxadio000eyygov3gl3za5_25",
+                            "score": 0.7319877
+                        },
+                        {
+                            "chunkId": "cmtjxadio000eyygov3gl3za5_23",
+                            "score": 0.7065621
+                        },
+                        {
+                            "chunkId": "cmtjxadio000eyygov3gl3za5_4",
+                            "score": 0.692349
+                        },
+                        {
+                            "chunkId": "cmtjxadio000eyygov3gl3za5_2",
+                            "score": 0.68094015
+                        }
+                    ],
+                    "metrics": {
+                        "precisionAtK": 0.8,
+                        "recallAtK": 0.14814814814814814,
+                        "mrrAtK": 1,
+                        "ndcgAtK": 0.2414142338935206
+                    },
+                    "latencyMs": 17.278833000000077
+                },
+                {
+                    "sampleId": "pgg-v1-json-contract-direct",
+                    "query": "工作流 JSON 输出必须包含哪些字段，各字段的数据类型有什么要求？",
+                    "retrievedChunkIds": [
+                        "cmtjxadio000eyygov3gl3za5_22",
+                        "cmtjxadio000eyygov3gl3za5_28",
+                        "cmtjxadio000eyygov3gl3za5_25",
+                        "cmtjxadio000eyygov3gl3za5_3",
+                        "cmtjxadio000eyygov3gl3za5_4"
+                    ],
+                    "retrievedResults": [
+                        {
+                            "chunkId": "cmtjxadio000eyygov3gl3za5_22",
+                            "score": 0.6970414
+                        },
+                        {
+                            "chunkId": "cmtjxadio000eyygov3gl3za5_28",
+                            "score": 0.6733947
+                        },
+                        {
+                            "chunkId": "cmtjxadio000eyygov3gl3za5_25",
+                            "score": 0.6400517
+                        },
+                        {
+                            "chunkId": "cmtjxadio000eyygov3gl3za5_3",
+                            "score": 0.6354509
+                        },
+                        {
+                            "chunkId": "cmtjxadio000eyygov3gl3za5_4",
+                            "score": 0.61972
+                        }
+                    ],
+                    "metrics": {
+                        "precisionAtK": 0.8,
+                        "recallAtK": 0.2857142857142857,
+                        "mrrAtK": 1,
+                        "ndcgAtK": 0.6723402705002275
+                    },
+                    "latencyMs": 17.96558300000015
+                },
+                {
+                    "sampleId": "pgg-v1-json-contract-synonym",
+                    "query": "sources 和 limitations 应如何填写，为什么不能从知识库生成当前事件数量或地点？",
+                    "retrievedChunkIds": [
+                        "cmtjxadio000eyygov3gl3za5_23",
+                        "cmtjxadio000eyygov3gl3za5_4",
+                        "cmtjxadio000eyygov3gl3za5_25",
+                        "cmtjxadio000eyygov3gl3za5_20",
+                        "cmtjxadio000eyygov3gl3za5_26"
+                    ],
+                    "retrievedResults": [
+                        {
+                            "chunkId": "cmtjxadio000eyygov3gl3za5_23",
+                            "score": 0.7434653
+                        },
+                        {
+                            "chunkId": "cmtjxadio000eyygov3gl3za5_4",
+                            "score": 0.6903498
+                        },
+                        {
+                            "chunkId": "cmtjxadio000eyygov3gl3za5_25",
+                            "score": 0.6719514
+                        },
+                        {
+                            "chunkId": "cmtjxadio000eyygov3gl3za5_20",
+                            "score": 0.66954774
+                        },
+                        {
+                            "chunkId": "cmtjxadio000eyygov3gl3za5_26",
+                            "score": 0.6631078
+                        }
+                    ],
+                    "metrics": {
+                        "precisionAtK": 0.6,
+                        "recallAtK": 0.15789473684210525,
+                        "mrrAtK": 0.3333333333333333,
+                        "ndcgAtK": 0.19211201652100066
+                    },
+                    "latencyMs": 20.70270800000003
+                },
+                {
+                    "sampleId": "pgg-v1-json-contract-keywords",
+                    "query": "JSON：result｜summary｜risk_level｜key_findings｜recommendations｜sources｜limitations｜数组｜有效 JSON",
+                    "retrievedChunkIds": [
+                        "cmtjxadio000eyygov3gl3za5_22",
+                        "cmtjxadio000eyygov3gl3za5_3",
+                        "cmtjxadio000eyygov3gl3za5_25",
+                        "cmtjxadio000eyygov3gl3za5_4",
+                        "cmtjxadio000eyygov3gl3za5_2"
+                    ],
+                    "retrievedResults": [
+                        {
+                            "chunkId": "cmtjxadio000eyygov3gl3za5_22",
+                            "score": 0.74074244
+                        },
+                        {
+                            "chunkId": "cmtjxadio000eyygov3gl3za5_3",
+                            "score": 0.70250267
+                        },
+                        {
+                            "chunkId": "cmtjxadio000eyygov3gl3za5_25",
+                            "score": 0.6886926
+                        },
+                        {
+                            "chunkId": "cmtjxadio000eyygov3gl3za5_4",
+                            "score": 0.67197704
+                        },
+                        {
+                            "chunkId": "cmtjxadio000eyygov3gl3za5_2",
+                            "score": 0.67090714
+                        }
+                    ],
+                    "metrics": {
+                        "precisionAtK": 0.8,
+                        "recallAtK": 0.3076923076923077,
+                        "mrrAtK": 1,
+                        "ndcgAtK": 0.6688988050297522
+                    },
+                    "latencyMs": 21.48129199999994
+                },
+                {
+                    "sampleId": "pgg-v1-typical-questions-direct",
+                    "query": "总结当前全球灾害态势时应读取哪些字段？",
+                    "retrievedChunkIds": [
+                        "cmtjxadio000eyygov3gl3za5_28",
+                        "cmtjxadio000eyygov3gl3za5_25",
+                        "cmtjxadio000eyygov3gl3za5_26",
+                        "cmtjxadio000eyygov3gl3za5_2",
+                        "cmtjxadio000eyygov3gl3za5_14"
+                    ],
+                    "retrievedResults": [
+                        {
+                            "chunkId": "cmtjxadio000eyygov3gl3za5_28",
+                            "score": 0.6054326
+                        },
+                        {
+                            "chunkId": "cmtjxadio000eyygov3gl3za5_25",
+                            "score": 0.6040651
+                        },
+                        {
+                            "chunkId": "cmtjxadio000eyygov3gl3za5_26",
+                            "score": 0.6008657
+                        },
+                        {
+                            "chunkId": "cmtjxadio000eyygov3gl3za5_2",
+                            "score": 0.59709454
+                        },
+                        {
+                            "chunkId": "cmtjxadio000eyygov3gl3za5_14",
+                            "score": 0.59094024
+                        }
+                    ],
+                    "metrics": {
+                        "precisionAtK": 1,
+                        "recallAtK": 0.18518518518518517,
+                        "mrrAtK": 1,
+                        "ndcgAtK": 0.36307151201863896
+                    },
+                    "latencyMs": 22.186374999999998
+                },
+                {
+                    "sampleId": "pgg-v1-typical-questions-synonym",
+                    "query": "当前洪水风险有多高？回答前应先核实哪些信息，数据不足时如何表达？",
+                    "retrievedChunkIds": [
+                        "cmtjxadio000eyygov3gl3za5_26",
+                        "cmtjxadio000eyygov3gl3za5_16",
+                        "cmtjxadio000eyygov3gl3za5_20",
+                        "cmtjxadio000eyygov3gl3za5_14",
+                        "cmtjxadio000eyygov3gl3za5_4"
+                    ],
+                    "retrievedResults": [
+                        {
+                            "chunkId": "cmtjxadio000eyygov3gl3za5_26",
+                            "score": 0.8498329
+                        },
+                        {
+                            "chunkId": "cmtjxadio000eyygov3gl3za5_16",
+                            "score": 0.76830816
+                        },
+                        {
+                            "chunkId": "cmtjxadio000eyygov3gl3za5_20",
+                            "score": 0.7377554
+                        },
+                        {
+                            "chunkId": "cmtjxadio000eyygov3gl3za5_14",
+                            "score": 0.73068357
+                        },
+                        {
+                            "chunkId": "cmtjxadio000eyygov3gl3za5_4",
+                            "score": 0.7301123
+                        }
+                    ],
+                    "metrics": {
+                        "precisionAtK": 1,
+                        "recallAtK": 0.17857142857142858,
+                        "mrrAtK": 1,
+                        "ndcgAtK": 0.19496140886776042
+                    },
+                    "latencyMs": 19.547166999999945
+                },
+                {
+                    "sampleId": "pgg-v1-typical-questions-keywords",
+                    "query": "最近地震记录｜recent｜震级｜时间｜严重程度｜不推断伤亡或建筑损坏",
+                    "retrievedChunkIds": [
+                        "cmtjxadio000eyygov3gl3za5_14",
+                        "cmtjxadio000eyygov3gl3za5_2",
+                        "cmtjxadio000eyygov3gl3za5_27",
+                        "cmtjxadio000eyygov3gl3za5_25",
+                        "cmtjxadio000eyygov3gl3za5_1"
+                    ],
+                    "retrievedResults": [
+                        {
+                            "chunkId": "cmtjxadio000eyygov3gl3za5_14",
+                            "score": 0.6075494
+                        },
+                        {
+                            "chunkId": "cmtjxadio000eyygov3gl3za5_2",
+                            "score": 0.60255665
+                        },
+                        {
+                            "chunkId": "cmtjxadio000eyygov3gl3za5_27",
+                            "score": 0.5981514
+                        },
+                        {
+                            "chunkId": "cmtjxadio000eyygov3gl3za5_25",
+                            "score": 0.59497213
+                        },
+                        {
+                            "chunkId": "cmtjxadio000eyygov3gl3za5_1",
+                            "score": 0.5903144
+                        }
+                    ],
+                    "metrics": {
+                        "precisionAtK": 1,
+                        "recallAtK": 0.2631578947368421,
+                        "mrrAtK": 1,
+                        "ndcgAtK": 0.4151234164428055
+                    },
+                    "latencyMs": 20.198458999999957
+                }
+            ],
+            "metadata": {
+                "hashStatus": "computed",
+                "datasetSha256": "9c3b6b988ed65c59001cb3913a7590f2db73dcd5d0270c16fa45a2ac927df817",
+                "topK": 5,
+                "mode": "vector",
+                "knowledgeBaseIds": ["cmtjxa48x000dyygofy7skckk"],
+                "retrievalConfig": {
+                    "threshold": 0.2,
+                    "vectorWeight": 0.7,
+                    "embedding": [
+                        {
+                            "knowledgeBaseId": "cmtjxa48x000dyygofy7skckk",
+                            "provider": "ollama",
+                            "model": "mxbai-embed-large:latest",
+                            "dimensions": 1024,
+                            "baseUrl": "http://localhost:11434"
+                        }
+                    ],
+                    "qdrant": {
+                        "url": "http://localhost:6333",
+                        "collectionName": "knowledge_chunks"
+                    }
+                },
+                "gitRevision": "4aaf41b6f3ca64cd9c641da4e7ab6604213dd814",
+                "embedding": [
+                    {
+                        "knowledgeBaseId": "cmtjxa48x000dyygofy7skckk",
+                        "provider": "ollama",
+                        "model": "mxbai-embed-large:latest",
+                        "dimensions": 1024,
+                        "baseUrl": "http://localhost:11434"
+                    }
+                ],
+                "qdrant": {
+                    "url": "http://localhost:6333",
+                    "collectionName": "knowledge_chunks"
+                }
+            }
+        },
+        {
+            "mode": "fulltext",
+            "config": {
+                "mode": "fulltext",
+                "topK": 5,
+                "knowledgeBaseIds": ["cmtjxa48x000dyygofy7skckk"],
+                "threshold": 0.2,
+                "vectorWeight": 0.7
+            },
+            "sampleCount": 24,
+            "metrics": {
+                "precisionAtK": 0.4583333333333333,
+                "recallAtK": 0.10635603981792344,
+                "mrrAtK": 0.6666666666666666,
+                "ndcgAtK": 0.3224316775962382
+            },
+            "latencyMs": {
+                "p50": 2.199000000000069,
+                "p95": 4.57162500000004
+            },
+            "queries": [
+                {
+                    "sampleId": "pgg-v1-scope-boundary-direct",
+                    "query": "Prometheus Global Guardian 知识库如何区分实时事实、知识规则和分析判断？",
+                    "retrievedChunkIds": [
+                        "cmtjxadio000eyygov3gl3za5_1",
+                        "cmtjxadio000eyygov3gl3za5_0",
+                        "cmtjxadio000eyygov3gl3za5_2",
+                        "cmtjxadio000eyygov3gl3za5_23",
+                        "cmtjxadio000eyygov3gl3za5_8"
+                    ],
+                    "retrievedResults": [
+                        {
+                            "chunkId": "cmtjxadio000eyygov3gl3za5_1",
+                            "score": 1
+                        },
+                        {
+                            "chunkId": "cmtjxadio000eyygov3gl3za5_0",
+                            "score": 1
+                        },
+                        {
+                            "chunkId": "cmtjxadio000eyygov3gl3za5_2",
+                            "score": 0.8750000000000001
+                        },
+                        {
+                            "chunkId": "cmtjxadio000eyygov3gl3za5_23",
+                            "score": 0.5416666666666667
+                        },
+                        {
+                            "chunkId": "cmtjxadio000eyygov3gl3za5_8",
+                            "score": 0.5416666666666667
+                        }
+                    ],
+                    "metrics": {
+                        "precisionAtK": 0.6,
+                        "recallAtK": 0.12,
+                        "mrrAtK": 1,
+                        "ndcgAtK": 0.6918327551227628
+                    },
+                    "latencyMs": 12.13045800000009
+                },
+                {
+                    "sampleId": "pgg-v1-scope-boundary-synonym",
+                    "query": "这个助手的灾害分析回答边界是什么，能否替代官方预警、应急调度或现场指挥？",
+                    "retrievedChunkIds": [],
+                    "retrievedResults": [],
+                    "metrics": {
+                        "precisionAtK": 0,
+                        "recallAtK": 0,
+                        "mrrAtK": 0,
+                        "ndcgAtK": 0
+                    },
+                    "latencyMs": 3.3527080000001206
+                },
+                {
+                    "sampleId": "pgg-v1-scope-boundary-keywords",
+                    "query": "实时事实｜知识规则｜分析判断｜非官方预警系统｜现场指挥",
+                    "retrievedChunkIds": [],
+                    "retrievedResults": [],
+                    "metrics": {
+                        "precisionAtK": 0,
+                        "recallAtK": 0,
+                        "mrrAtK": 0,
+                        "ndcgAtK": 0
+                    },
+                    "latencyMs": 2.3494580000001406
+                },
+                {
+                    "sampleId": "pgg-v1-workflow-fields-direct",
+                    "query": "hazard_context、location 和 language 分别如何作为工作流输入？",
+                    "retrievedChunkIds": [
+                        "cmtjxadio000eyygov3gl3za5_1",
+                        "cmtjxadio000eyygov3gl3za5_29",
+                        "cmtjxadio000eyygov3gl3za5_6",
+                        "cmtjxadio000eyygov3gl3za5_15",
+                        "cmtjxadio000eyygov3gl3za5_18"
+                    ],
+                    "retrievedResults": [
+                        {
+                            "chunkId": "cmtjxadio000eyygov3gl3za5_1",
+                            "score": 1
+                        },
+                        {
+                            "chunkId": "cmtjxadio000eyygov3gl3za5_29",
+                            "score": 0.803921568627451
+                        },
+                        {
+                            "chunkId": "cmtjxadio000eyygov3gl3za5_6",
+                            "score": 0.6470588235294118
+                        },
+                        {
+                            "chunkId": "cmtjxadio000eyygov3gl3za5_15",
+                            "score": 0.6470588235294118
+                        },
+                        {
+                            "chunkId": "cmtjxadio000eyygov3gl3za5_18",
+                            "score": 0.6470588235294118
+                        }
+                    ],
+                    "metrics": {
+                        "precisionAtK": 0.8,
+                        "recallAtK": 0.21052631578947367,
+                        "mrrAtK": 1,
+                        "ndcgAtK": 0.19061013552973502
+                    },
+                    "latencyMs": 4.57162500000004
+                },
+                {
+                    "sampleId": "pgg-v1-workflow-fields-synonym",
+                    "query": "total、byType、recent 字段各表示什么，recent 有哪些覆盖限制？",
+                    "retrievedChunkIds": [
+                        "cmtjxadio000eyygov3gl3za5_4",
+                        "cmtjxadio000eyygov3gl3za5_3",
+                        "cmtjxadio000eyygov3gl3za5_29",
+                        "cmtjxadio000eyygov3gl3za5_25",
+                        "cmtjxadio000eyygov3gl3za5_27"
+                    ],
+                    "retrievedResults": [
+                        {
+                            "chunkId": "cmtjxadio000eyygov3gl3za5_4",
+                            "score": 1
+                        },
+                        {
+                            "chunkId": "cmtjxadio000eyygov3gl3za5_3",
+                            "score": 0.75
+                        },
+                        {
+                            "chunkId": "cmtjxadio000eyygov3gl3za5_29",
+                            "score": 0.75
+                        },
+                        {
+                            "chunkId": "cmtjxadio000eyygov3gl3za5_25",
+                            "score": 0.375
+                        },
+                        {
+                            "chunkId": "cmtjxadio000eyygov3gl3za5_27",
+                            "score": 0.375
+                        }
+                    ],
+                    "metrics": {
+                        "precisionAtK": 0.8,
+                        "recallAtK": 0.23529411764705882,
+                        "mrrAtK": 1,
+                        "ndcgAtK": 0.8318026507343437
+                    },
+                    "latencyMs": 2.6441659999998137
+                },
+                {
+                    "sampleId": "pgg-v1-workflow-fields-keywords",
+                    "query": "hazard_context｜total｜byType｜recent｜location｜language｜空或不完整快照",
+                    "retrievedChunkIds": [],
+                    "retrievedResults": [],
+                    "metrics": {
+                        "precisionAtK": 0,
+                        "recallAtK": 0,
+                        "mrrAtK": 0,
+                        "ndcgAtK": 0
+                    },
+                    "latencyMs": 2.554499999999962
+                },
+                {
+                    "sampleId": "pgg-v1-hazard-types-direct",
+                    "query": "统一灾害类型编码与各类型的分析重点如何对应？",
+                    "retrievedChunkIds": [],
+                    "retrievedResults": [],
+                    "metrics": {
+                        "precisionAtK": 0,
+                        "recallAtK": 0,
+                        "mrrAtK": 0,
+                        "ndcgAtK": 0
+                    },
+                    "latencyMs": 2.4108750000000327
+                },
+                {
+                    "sampleId": "pgg-v1-hazard-types-synonym",
+                    "query": "遇到 UNKNOWN 或 DisasterAware 的额外类型编码时，Guardian 应该如何处理？",
+                    "retrievedChunkIds": [
+                        "cmtjxadio000eyygov3gl3za5_21",
+                        "cmtjxadio000eyygov3gl3za5_2",
+                        "cmtjxadio000eyygov3gl3za5_23",
+                        "cmtjxadio000eyygov3gl3za5_13",
+                        "cmtjxadio000eyygov3gl3za5_8"
+                    ],
+                    "retrievedResults": [
+                        {
+                            "chunkId": "cmtjxadio000eyygov3gl3za5_21",
+                            "score": 1
+                        },
+                        {
+                            "chunkId": "cmtjxadio000eyygov3gl3za5_2",
+                            "score": 0.8541666666666666
+                        },
+                        {
+                            "chunkId": "cmtjxadio000eyygov3gl3za5_23",
+                            "score": 0.8541666666666666
+                        },
+                        {
+                            "chunkId": "cmtjxadio000eyygov3gl3za5_13",
+                            "score": 0.7083333333333334
+                        },
+                        {
+                            "chunkId": "cmtjxadio000eyygov3gl3za5_8",
+                            "score": 0.7083333333333334
+                        }
+                    ],
+                    "metrics": {
+                        "precisionAtK": 0.4,
+                        "recallAtK": 0.08695652173913043,
+                        "mrrAtK": 0.5,
+                        "ndcgAtK": 0.08794194659356239
+                    },
+                    "latencyMs": 2.5373329999999896
+                },
+                {
+                    "sampleId": "pgg-v1-hazard-types-keywords",
+                    "query": "灾害类型编码与分析重点：EARTHQUAKE｜FLOOD｜VOLCANO｜WILDFIRE｜TROPICAL_CYCLONE｜STORM｜DROUGHT｜TSUNAMI｜LANDSLIDE",
+                    "retrievedChunkIds": [],
+                    "retrievedResults": [],
+                    "metrics": {
+                        "precisionAtK": 0,
+                        "recallAtK": 0,
+                        "mrrAtK": 0,
+                        "ndcgAtK": 0
+                    },
+                    "latencyMs": 2.199000000000069
+                },
+                {
+                    "sampleId": "pgg-v1-severity-sources-direct",
+                    "query": "ADVISORY、WATCH、WARNING 在 Guardian 中分别表示什么？",
+                    "retrievedChunkIds": [
+                        "cmtjxadio000eyygov3gl3za5_8",
+                        "cmtjxadio000eyygov3gl3za5_21",
+                        "cmtjxadio000eyygov3gl3za5_11",
+                        "cmtjxadio000eyygov3gl3za5_7",
+                        "cmtjxadio000eyygov3gl3za5_2"
+                    ],
+                    "retrievedResults": [
+                        {
+                            "chunkId": "cmtjxadio000eyygov3gl3za5_8",
+                            "score": 1
+                        },
+                        {
+                            "chunkId": "cmtjxadio000eyygov3gl3za5_21",
+                            "score": 0.42857142857142855
+                        },
+                        {
+                            "chunkId": "cmtjxadio000eyygov3gl3za5_11",
+                            "score": 0.21428571428571427
+                        },
+                        {
+                            "chunkId": "cmtjxadio000eyygov3gl3za5_7",
+                            "score": 0.21428571428571427
+                        },
+                        {
+                            "chunkId": "cmtjxadio000eyygov3gl3za5_2",
+                            "score": 0.17857142857142858
+                        }
+                    ],
+                    "metrics": {
+                        "precisionAtK": 0.8,
+                        "recallAtK": 0.17391304347826086,
+                        "mrrAtK": 0.5,
+                        "ndcgAtK": 0.4307011241254567
+                    },
+                    "latencyMs": 2.2204169999999976
+                },
+                {
+                    "sampleId": "pgg-v1-severity-sources-synonym",
+                    "query": "USGS、NASA EONET 和 GDACS 的数据来源及严重程度映射有什么差异？",
+                    "retrievedChunkIds": [
+                        "cmtjxadio000eyygov3gl3za5_29",
+                        "cmtjxadio000eyygov3gl3za5_23",
+                        "cmtjxadio000eyygov3gl3za5_8",
+                        "cmtjxadio000eyygov3gl3za5_1",
+                        "cmtjxadio000eyygov3gl3za5_11"
+                    ],
+                    "retrievedResults": [
+                        {
+                            "chunkId": "cmtjxadio000eyygov3gl3za5_29",
+                            "score": 1
+                        },
+                        {
+                            "chunkId": "cmtjxadio000eyygov3gl3za5_23",
+                            "score": 0.76
+                        },
+                        {
+                            "chunkId": "cmtjxadio000eyygov3gl3za5_8",
+                            "score": 0.68
+                        },
+                        {
+                            "chunkId": "cmtjxadio000eyygov3gl3za5_1",
+                            "score": 0.6
+                        },
+                        {
+                            "chunkId": "cmtjxadio000eyygov3gl3za5_11",
+                            "score": 0.52
+                        }
+                    ],
+                    "metrics": {
+                        "precisionAtK": 0.6,
+                        "recallAtK": 0.11538461538461539,
+                        "mrrAtK": 1,
+                        "ndcgAtK": 0.2017250959496282
+                    },
+                    "latencyMs": 2.1620000000000346
+                },
+                {
+                    "sampleId": "pgg-v1-severity-sources-keywords",
+                    "query": "DisasterAware 原始字段｜统一 Hazard 字段｜USGS magnitude｜GDACS Red Orange｜NASA ADVISORY",
+                    "retrievedChunkIds": [
+                        "cmtjxadio000eyygov3gl3za5_13",
+                        "cmtjxadio000eyygov3gl3za5_8",
+                        "cmtjxadio000eyygov3gl3za5_29",
+                        "cmtjxadio000eyygov3gl3za5_1",
+                        "cmtjxadio000eyygov3gl3za5_25"
+                    ],
+                    "retrievedResults": [
+                        {
+                            "chunkId": "cmtjxadio000eyygov3gl3za5_13",
+                            "score": 1
+                        },
+                        {
+                            "chunkId": "cmtjxadio000eyygov3gl3za5_8",
+                            "score": 0.8518518518518519
+                        },
+                        {
+                            "chunkId": "cmtjxadio000eyygov3gl3za5_29",
+                            "score": 0.7962962962962963
+                        },
+                        {
+                            "chunkId": "cmtjxadio000eyygov3gl3za5_1",
+                            "score": 0.35185185185185186
+                        },
+                        {
+                            "chunkId": "cmtjxadio000eyygov3gl3za5_25",
+                            "score": 0.35185185185185186
+                        }
+                    ],
+                    "metrics": {
+                        "precisionAtK": 1,
+                        "recallAtK": 0.25,
+                        "mrrAtK": 1,
+                        "ndcgAtK": 0.8936138669994189
+                    },
+                    "latencyMs": 2.1700419999999667
+                },
+                {
+                    "sampleId": "pgg-v1-hazard-guidance-direct",
+                    "query": "在没有完整地点、时间、强度或官方预警时，灾害建议应如何表述？",
+                    "retrievedChunkIds": [
+                        "cmtjxadio000eyygov3gl3za5_6",
+                        "cmtjxadio000eyygov3gl3za5_15",
+                        "cmtjxadio000eyygov3gl3za5_20",
+                        "cmtjxadio000eyygov3gl3za5_3",
+                        "cmtjxadio000eyygov3gl3za5_28"
+                    ],
+                    "retrievedResults": [
+                        {
+                            "chunkId": "cmtjxadio000eyygov3gl3za5_6",
+                            "score": 1
+                        },
+                        {
+                            "chunkId": "cmtjxadio000eyygov3gl3za5_15",
+                            "score": 1
+                        },
+                        {
+                            "chunkId": "cmtjxadio000eyygov3gl3za5_20",
+                            "score": 1
+                        },
+                        {
+                            "chunkId": "cmtjxadio000eyygov3gl3za5_3",
+                            "score": 0.6363636363636364
+                        },
+                        {
+                            "chunkId": "cmtjxadio000eyygov3gl3za5_28",
+                            "score": 0.6363636363636364
+                        }
+                    ],
+                    "metrics": {
+                        "precisionAtK": 1,
+                        "recallAtK": 0.18518518518518517,
+                        "mrrAtK": 1,
+                        "ndcgAtK": 0.44874976843991216
+                    },
+                    "latencyMs": 2.2672499999998763
+                },
+                {
+                    "sampleId": "pgg-v1-hazard-guidance-synonym",
+                    "query": "地震、洪水或野火的通用准备建议有哪些，哪些行动不能被回答宣称已经执行？",
+                    "retrievedChunkIds": [
+                        "cmtjxadio000eyygov3gl3za5_15",
+                        "cmtjxadio000eyygov3gl3za5_10",
+                        "cmtjxadio000eyygov3gl3za5_1",
+                        "cmtjxadio000eyygov3gl3za5_19",
+                        "cmtjxadio000eyygov3gl3za5_5"
+                    ],
+                    "retrievedResults": [
+                        {
+                            "chunkId": "cmtjxadio000eyygov3gl3za5_15",
+                            "score": 1
+                        },
+                        {
+                            "chunkId": "cmtjxadio000eyygov3gl3za5_10",
+                            "score": 1
+                        },
+                        {
+                            "chunkId": "cmtjxadio000eyygov3gl3za5_1",
+                            "score": 0.6666666666666666
+                        },
+                        {
+                            "chunkId": "cmtjxadio000eyygov3gl3za5_19",
+                            "score": 0.6666666666666666
+                        },
+                        {
+                            "chunkId": "cmtjxadio000eyygov3gl3za5_5",
+                            "score": 0.6666666666666666
+                        }
+                    ],
+                    "metrics": {
+                        "precisionAtK": 1,
+                        "recallAtK": 0.19230769230769232,
+                        "mrrAtK": 1,
+                        "ndcgAtK": 0.47105305523805435
+                    },
+                    "latencyMs": 2.222542000000203
+                },
+                {
+                    "sampleId": "pgg-v1-hazard-guidance-keywords",
+                    "query": "地震：余震｜建筑安全｜海啸；洪水：积水｜水位｜道路；野火：风向｜烟雾｜疏散",
+                    "retrievedChunkIds": [
+                        "cmtjxadio000eyygov3gl3za5_5",
+                        "cmtjxadio000eyygov3gl3za5_26",
+                        "cmtjxadio000eyygov3gl3za5_11",
+                        "cmtjxadio000eyygov3gl3za5_6",
+                        "cmtjxadio000eyygov3gl3za5_15"
+                    ],
+                    "retrievedResults": [
+                        {
+                            "chunkId": "cmtjxadio000eyygov3gl3za5_5",
+                            "score": 1
+                        },
+                        {
+                            "chunkId": "cmtjxadio000eyygov3gl3za5_26",
+                            "score": 0.7777777777777778
+                        },
+                        {
+                            "chunkId": "cmtjxadio000eyygov3gl3za5_11",
+                            "score": 0.6666666666666666
+                        },
+                        {
+                            "chunkId": "cmtjxadio000eyygov3gl3za5_6",
+                            "score": 0.6666666666666666
+                        },
+                        {
+                            "chunkId": "cmtjxadio000eyygov3gl3za5_15",
+                            "score": 0.5555555555555556
+                        }
+                    ],
+                    "metrics": {
+                        "precisionAtK": 0.6,
+                        "recallAtK": 0.13043478260869565,
+                        "mrrAtK": 1,
+                        "ndcgAtK": 0.6843515475204854
+                    },
+                    "latencyMs": 2.7444580000001224
+                },
+                {
+                    "sampleId": "pgg-v1-risk-levels-direct",
+                    "query": "LOW、MEDIUM、HIGH、CRITICAL 四个风险等级分别依据什么？",
+                    "retrievedChunkIds": ["cmtjxadio000eyygov3gl3za5_21", "cmtjxadio000eyygov3gl3za5_22", "cmtjxadio000eyygov3gl3za5_23"],
+                    "retrievedResults": [
+                        {
+                            "chunkId": "cmtjxadio000eyygov3gl3za5_21",
+                            "score": 1
+                        },
+                        {
+                            "chunkId": "cmtjxadio000eyygov3gl3za5_22",
+                            "score": 0.7619047619047619
+                        },
+                        {
+                            "chunkId": "cmtjxadio000eyygov3gl3za5_23",
+                            "score": 0.7619047619047619
+                        }
+                    ],
+                    "metrics": {
+                        "precisionAtK": 0.4,
+                        "recallAtK": 0.07407407407407407,
+                        "mrrAtK": 1,
+                        "ndcgAtK": 0.22520080028785214
+                    },
+                    "latencyMs": 2.1539580000001024
+                },
+                {
+                    "sampleId": "pgg-v1-risk-levels-synonym",
+                    "query": "为什么只有事件数量不能单独触发 HIGH 或 CRITICAL，信息不足时应如何选择等级？",
+                    "retrievedChunkIds": [
+                        "cmtjxadio000eyygov3gl3za5_21",
+                        "cmtjxadio000eyygov3gl3za5_23",
+                        "cmtjxadio000eyygov3gl3za5_22",
+                        "cmtjxadio000eyygov3gl3za5_4",
+                        "cmtjxadio000eyygov3gl3za5_3"
+                    ],
+                    "retrievedResults": [
+                        {
+                            "chunkId": "cmtjxadio000eyygov3gl3za5_21",
+                            "score": 1
+                        },
+                        {
+                            "chunkId": "cmtjxadio000eyygov3gl3za5_23",
+                            "score": 0.6296296296296295
+                        },
+                        {
+                            "chunkId": "cmtjxadio000eyygov3gl3za5_22",
+                            "score": 0.537037037037037
+                        },
+                        {
+                            "chunkId": "cmtjxadio000eyygov3gl3za5_4",
+                            "score": 0.4259259259259259
+                        },
+                        {
+                            "chunkId": "cmtjxadio000eyygov3gl3za5_3",
+                            "score": 0.3333333333333333
+                        }
+                    ],
+                    "metrics": {
+                        "precisionAtK": 0.8,
+                        "recallAtK": 0.14814814814814814,
+                        "mrrAtK": 1,
+                        "ndcgAtK": 0.31849862142529956
+                    },
+                    "latencyMs": 2.090750000000071
+                },
+                {
+                    "sampleId": "pgg-v1-risk-levels-keywords",
+                    "query": "risk_level：LOW｜MEDIUM｜HIGH｜CRITICAL｜WARNING｜叠加灾害｜证据不足",
+                    "retrievedChunkIds": ["cmtjxadio000eyygov3gl3za5_22", "cmtjxadio000eyygov3gl3za5_23", "cmtjxadio000eyygov3gl3za5_21"],
+                    "retrievedResults": [
+                        {
+                            "chunkId": "cmtjxadio000eyygov3gl3za5_22",
+                            "score": 1
+                        },
+                        {
+                            "chunkId": "cmtjxadio000eyygov3gl3za5_23",
+                            "score": 0.7142857142857143
+                        },
+                        {
+                            "chunkId": "cmtjxadio000eyygov3gl3za5_21",
+                            "score": 0.7142857142857143
+                        }
+                    ],
+                    "metrics": {
+                        "precisionAtK": 0.4,
+                        "recallAtK": 0.07407407407407407,
+                        "mrrAtK": 1,
+                        "ndcgAtK": 0.2277297191409033
+                    },
+                    "latencyMs": 2.195708000000195
+                },
+                {
+                    "sampleId": "pgg-v1-json-contract-direct",
+                    "query": "工作流 JSON 输出必须包含哪些字段，各字段的数据类型有什么要求？",
+                    "retrievedChunkIds": [
+                        "cmtjxadio000eyygov3gl3za5_22",
+                        "cmtjxadio000eyygov3gl3za5_2",
+                        "cmtjxadio000eyygov3gl3za5_21",
+                        "cmtjxadio000eyygov3gl3za5_29",
+                        "cmtjxadio000eyygov3gl3za5_10"
+                    ],
+                    "retrievedResults": [
+                        {
+                            "chunkId": "cmtjxadio000eyygov3gl3za5_22",
+                            "score": 1
+                        },
+                        {
+                            "chunkId": "cmtjxadio000eyygov3gl3za5_2",
+                            "score": 0.5
+                        },
+                        {
+                            "chunkId": "cmtjxadio000eyygov3gl3za5_21",
+                            "score": 0.5
+                        },
+                        {
+                            "chunkId": "cmtjxadio000eyygov3gl3za5_29",
+                            "score": 0.5
+                        },
+                        {
+                            "chunkId": "cmtjxadio000eyygov3gl3za5_10",
+                            "score": 0.3181818181818182
+                        }
+                    ],
+                    "metrics": {
+                        "precisionAtK": 0.8,
+                        "recallAtK": 0.2857142857142857,
+                        "mrrAtK": 1,
+                        "ndcgAtK": 0.9079293338232259
+                    },
+                    "latencyMs": 2.1805830000000697
+                },
+                {
+                    "sampleId": "pgg-v1-json-contract-synonym",
+                    "query": "sources 和 limitations 应如何填写，为什么不能从知识库生成当前事件数量或地点？",
+                    "retrievedChunkIds": [
+                        "cmtjxadio000eyygov3gl3za5_22",
+                        "cmtjxadio000eyygov3gl3za5_1",
+                        "cmtjxadio000eyygov3gl3za5_23",
+                        "cmtjxadio000eyygov3gl3za5_6",
+                        "cmtjxadio000eyygov3gl3za5_15"
+                    ],
+                    "retrievedResults": [
+                        {
+                            "chunkId": "cmtjxadio000eyygov3gl3za5_22",
+                            "score": 1
+                        },
+                        {
+                            "chunkId": "cmtjxadio000eyygov3gl3za5_1",
+                            "score": 0.8636363636363635
+                        },
+                        {
+                            "chunkId": "cmtjxadio000eyygov3gl3za5_23",
+                            "score": 0.7727272727272726
+                        },
+                        {
+                            "chunkId": "cmtjxadio000eyygov3gl3za5_6",
+                            "score": 0.7499999999999999
+                        },
+                        {
+                            "chunkId": "cmtjxadio000eyygov3gl3za5_15",
+                            "score": 0.7499999999999999
+                        }
+                    ],
+                    "metrics": {
+                        "precisionAtK": 0.6,
+                        "recallAtK": 0.15789473684210525,
+                        "mrrAtK": 1,
+                        "ndcgAtK": 0.5245335260501186
+                    },
+                    "latencyMs": 2.076374999999871
+                },
+                {
+                    "sampleId": "pgg-v1-json-contract-keywords",
+                    "query": "JSON：result｜summary｜risk_level｜key_findings｜recommendations｜sources｜limitations｜数组｜有效 JSON",
+                    "retrievedChunkIds": ["cmtjxadio000eyygov3gl3za5_22", "cmtjxadio000eyygov3gl3za5_10"],
+                    "retrievedResults": [
+                        {
+                            "chunkId": "cmtjxadio000eyygov3gl3za5_22",
+                            "score": 1
+                        },
+                        {
+                            "chunkId": "cmtjxadio000eyygov3gl3za5_10",
+                            "score": 0.6666666666666666
+                        }
+                    ],
+                    "metrics": {
+                        "precisionAtK": 0.2,
+                        "recallAtK": 0.07692307692307693,
+                        "mrrAtK": 1,
+                        "ndcgAtK": 0.5497078144203298
+                    },
+                    "latencyMs": 2.076042000000143
+                },
+                {
+                    "sampleId": "pgg-v1-typical-questions-direct",
+                    "query": "总结当前全球灾害态势时应读取哪些字段？",
+                    "retrievedChunkIds": [],
+                    "retrievedResults": [],
+                    "metrics": {
+                        "precisionAtK": 0,
+                        "recallAtK": 0,
+                        "mrrAtK": 0,
+                        "ndcgAtK": 0
+                    },
+                    "latencyMs": 2.1929589999999735
+                },
+                {
+                    "sampleId": "pgg-v1-typical-questions-synonym",
+                    "query": "当前洪水风险有多高？回答前应先核实哪些信息，数据不足时如何表达？",
+                    "retrievedChunkIds": ["cmtjxadio000eyygov3gl3za5_26"],
+                    "retrievedResults": [
+                        {
+                            "chunkId": "cmtjxadio000eyygov3gl3za5_26",
+                            "score": 1
+                        }
+                    ],
+                    "metrics": {
+                        "precisionAtK": 0.2,
+                        "recallAtK": 0.03571428571428571,
+                        "mrrAtK": 1,
+                        "ndcgAtK": 0.05237850090862913
+                    },
+                    "latencyMs": 2.10024999999996
+                },
+                {
+                    "sampleId": "pgg-v1-typical-questions-keywords",
+                    "query": "最近地震记录｜recent｜震级｜时间｜严重程度｜不推断伤亡或建筑损坏",
+                    "retrievedChunkIds": [],
+                    "retrievedResults": [],
+                    "metrics": {
+                        "precisionAtK": 0,
+                        "recallAtK": 0,
+                        "mrrAtK": 0,
+                        "ndcgAtK": 0
+                    },
+                    "latencyMs": 2.1003749999999854
+                }
+            ],
+            "metadata": {
+                "hashStatus": "computed",
+                "datasetSha256": "9c3b6b988ed65c59001cb3913a7590f2db73dcd5d0270c16fa45a2ac927df817",
+                "topK": 5,
+                "mode": "fulltext",
+                "knowledgeBaseIds": ["cmtjxa48x000dyygofy7skckk"],
+                "retrievalConfig": {
+                    "threshold": 0.2,
+                    "vectorWeight": 0.7,
+                    "embedding": [
+                        {
+                            "knowledgeBaseId": "cmtjxa48x000dyygofy7skckk",
+                            "provider": "ollama",
+                            "model": "mxbai-embed-large:latest",
+                            "dimensions": 1024,
+                            "baseUrl": "http://localhost:11434"
+                        }
+                    ],
+                    "qdrant": {
+                        "url": "http://localhost:6333",
+                        "collectionName": "knowledge_chunks"
+                    }
+                },
+                "gitRevision": "4aaf41b6f3ca64cd9c641da4e7ab6604213dd814",
+                "embedding": [
+                    {
+                        "knowledgeBaseId": "cmtjxa48x000dyygofy7skckk",
+                        "provider": "ollama",
+                        "model": "mxbai-embed-large:latest",
+                        "dimensions": 1024,
+                        "baseUrl": "http://localhost:11434"
+                    }
+                ],
+                "qdrant": {
+                    "url": "http://localhost:6333",
+                    "collectionName": "knowledge_chunks"
+                }
+            }
+        },
+        {
+            "mode": "hybrid",
+            "config": {
+                "mode": "hybrid",
+                "topK": 5,
+                "knowledgeBaseIds": ["cmtjxa48x000dyygofy7skckk"],
+                "threshold": 0.2,
+                "vectorWeight": 0.7
+            },
+            "sampleCount": 24,
+            "metrics": {
+                "precisionAtK": 0.8583333333333335,
+                "recallAtK": 0.19566558116789193,
+                "mrrAtK": 0.9097222222222223,
+                "ndcgAtK": 0.47242567961486837
+            },
+            "latencyMs": {
+                "p50": 19.304167000000007,
+                "p95": 22.559499999999844
+            },
+            "queries": [
+                {
+                    "sampleId": "pgg-v1-scope-boundary-direct",
+                    "query": "Prometheus Global Guardian 知识库如何区分实时事实、知识规则和分析判断？",
+                    "retrievedChunkIds": [
+                        "cmtjxadio000eyygov3gl3za5_0",
+                        "cmtjxadio000eyygov3gl3za5_1",
+                        "cmtjxadio000eyygov3gl3za5_11",
+                        "cmtjxadio000eyygov3gl3za5_8",
+                        "cmtjxadio000eyygov3gl3za5_23"
+                    ],
+                    "retrievedResults": [
+                        {
+                            "chunkId": "cmtjxadio000eyygov3gl3za5_0",
+                            "score": 0.01631411951348493
+                        },
+                        {
+                            "chunkId": "cmtjxadio000eyygov3gl3za5_1",
+                            "score": 0.016208355367530406
+                        },
+                        {
+                            "chunkId": "cmtjxadio000eyygov3gl3za5_11",
+                            "score": 0.015588723051409618
+                        },
+                        {
+                            "chunkId": "cmtjxadio000eyygov3gl3za5_8",
+                            "score": 0.015552884615384614
+                        },
+                        {
+                            "chunkId": "cmtjxadio000eyygov3gl3za5_23",
+                            "score": 0.01545673076923077
+                        }
+                    ],
+                    "metrics": {
+                        "precisionAtK": 0.6,
+                        "recallAtK": 0.12,
+                        "mrrAtK": 0.5,
+                        "ndcgAtK": 0.4162730828853619
+                    },
+                    "latencyMs": 22.559499999999844
+                },
+                {
+                    "sampleId": "pgg-v1-scope-boundary-synonym",
+                    "query": "这个助手的灾害分析回答边界是什么，能否替代官方预警、应急调度或现场指挥？",
+                    "retrievedChunkIds": [
+                        "cmtjxadio000eyygov3gl3za5_14",
+                        "cmtjxadio000eyygov3gl3za5_18",
+                        "cmtjxadio000eyygov3gl3za5_25",
+                        "cmtjxadio000eyygov3gl3za5_1",
+                        "cmtjxadio000eyygov3gl3za5_20"
+                    ],
+                    "retrievedResults": [
+                        {
+                            "chunkId": "cmtjxadio000eyygov3gl3za5_14",
+                            "score": 0.6539794
+                        },
+                        {
+                            "chunkId": "cmtjxadio000eyygov3gl3za5_18",
+                            "score": 0.61884683
+                        },
+                        {
+                            "chunkId": "cmtjxadio000eyygov3gl3za5_25",
+                            "score": 0.6108173
+                        },
+                        {
+                            "chunkId": "cmtjxadio000eyygov3gl3za5_1",
+                            "score": 0.6107061
+                        },
+                        {
+                            "chunkId": "cmtjxadio000eyygov3gl3za5_20",
+                            "score": 0.6069879
+                        }
+                    ],
+                    "metrics": {
+                        "precisionAtK": 1,
+                        "recallAtK": 0.19230769230769232,
+                        "mrrAtK": 1,
+                        "ndcgAtK": 0.744865901816983
+                    },
+                    "latencyMs": 22.871167000000014
+                },
+                {
+                    "sampleId": "pgg-v1-scope-boundary-keywords",
+                    "query": "实时事实｜知识规则｜分析判断｜非官方预警系统｜现场指挥",
+                    "retrievedChunkIds": [
+                        "cmtjxadio000eyygov3gl3za5_1",
+                        "cmtjxadio000eyygov3gl3za5_14",
+                        "cmtjxadio000eyygov3gl3za5_28",
+                        "cmtjxadio000eyygov3gl3za5_4",
+                        "cmtjxadio000eyygov3gl3za5_3"
+                    ],
+                    "retrievedResults": [
+                        {
+                            "chunkId": "cmtjxadio000eyygov3gl3za5_1",
+                            "score": 0.62120193
+                        },
+                        {
+                            "chunkId": "cmtjxadio000eyygov3gl3za5_14",
+                            "score": 0.6203121
+                        },
+                        {
+                            "chunkId": "cmtjxadio000eyygov3gl3za5_28",
+                            "score": 0.6199343
+                        },
+                        {
+                            "chunkId": "cmtjxadio000eyygov3gl3za5_4",
+                            "score": 0.60742545
+                        },
+                        {
+                            "chunkId": "cmtjxadio000eyygov3gl3za5_3",
+                            "score": 0.60716015
+                        }
+                    ],
+                    "metrics": {
+                        "precisionAtK": 1,
+                        "recallAtK": 0.19230769230769232,
+                        "mrrAtK": 1,
+                        "ndcgAtK": 0.8550954896482754
+                    },
+                    "latencyMs": 20.66887500000007
+                },
+                {
+                    "sampleId": "pgg-v1-workflow-fields-direct",
+                    "query": "hazard_context、location 和 language 分别如何作为工作流输入？",
+                    "retrievedChunkIds": [
+                        "cmtjxadio000eyygov3gl3za5_1",
+                        "cmtjxadio000eyygov3gl3za5_29",
+                        "cmtjxadio000eyygov3gl3za5_23",
+                        "cmtjxadio000eyygov3gl3za5_25",
+                        "cmtjxadio000eyygov3gl3za5_2"
+                    ],
+                    "retrievedResults": [
+                        {
+                            "chunkId": "cmtjxadio000eyygov3gl3za5_1",
+                            "score": 0.016029143897996357
+                        },
+                        {
+                            "chunkId": "cmtjxadio000eyygov3gl3za5_29",
+                            "score": 0.015607940446650124
+                        },
+                        {
+                            "chunkId": "cmtjxadio000eyygov3gl3za5_23",
+                            "score": 0.01501782531194296
+                        },
+                        {
+                            "chunkId": "cmtjxadio000eyygov3gl3za5_25",
+                            "score": 0.011475409836065573
+                        },
+                        {
+                            "chunkId": "cmtjxadio000eyygov3gl3za5_2",
+                            "score": 0.01129032258064516
+                        }
+                    ],
+                    "metrics": {
+                        "precisionAtK": 0.8,
+                        "recallAtK": 0.21052631578947367,
+                        "mrrAtK": 1,
+                        "ndcgAtK": 0.31789785041892904
+                    },
+                    "latencyMs": 18.785249999999905
+                },
+                {
+                    "sampleId": "pgg-v1-workflow-fields-synonym",
+                    "query": "total、byType、recent 字段各表示什么，recent 有哪些覆盖限制？",
+                    "retrievedChunkIds": [
+                        "cmtjxadio000eyygov3gl3za5_3",
+                        "cmtjxadio000eyygov3gl3za5_4",
+                        "cmtjxadio000eyygov3gl3za5_27",
+                        "cmtjxadio000eyygov3gl3za5_25",
+                        "cmtjxadio000eyygov3gl3za5_26"
+                    ],
+                    "retrievedResults": [
+                        {
+                            "chunkId": "cmtjxadio000eyygov3gl3za5_3",
+                            "score": 0.01631411951348493
+                        },
+                        {
+                            "chunkId": "cmtjxadio000eyygov3gl3za5_4",
+                            "score": 0.016208355367530406
+                        },
+                        {
+                            "chunkId": "cmtjxadio000eyygov3gl3za5_27",
+                            "score": 0.015726495726495725
+                        },
+                        {
+                            "chunkId": "cmtjxadio000eyygov3gl3za5_25",
+                            "score": 0.015625
+                        },
+                        {
+                            "chunkId": "cmtjxadio000eyygov3gl3za5_26",
+                            "score": 0.015151515151515152
+                        }
+                    ],
+                    "metrics": {
+                        "precisionAtK": 0.8,
+                        "recallAtK": 0.23529411764705882,
+                        "mrrAtK": 1,
+                        "ndcgAtK": 0.7682994509946334
+                    },
+                    "latencyMs": 21.654584000000114
+                },
+                {
+                    "sampleId": "pgg-v1-workflow-fields-keywords",
+                    "query": "hazard_context｜total｜byType｜recent｜location｜language｜空或不完整快照",
+                    "retrievedChunkIds": [
+                        "cmtjxadio000eyygov3gl3za5_25",
+                        "cmtjxadio000eyygov3gl3za5_2",
+                        "cmtjxadio000eyygov3gl3za5_1",
+                        "cmtjxadio000eyygov3gl3za5_4",
+                        "cmtjxadio000eyygov3gl3za5_26"
+                    ],
+                    "retrievedResults": [
+                        {
+                            "chunkId": "cmtjxadio000eyygov3gl3za5_25",
+                            "score": 0.7801577
+                        },
+                        {
+                            "chunkId": "cmtjxadio000eyygov3gl3za5_2",
+                            "score": 0.76122844
+                        },
+                        {
+                            "chunkId": "cmtjxadio000eyygov3gl3za5_1",
+                            "score": 0.7284752
+                        },
+                        {
+                            "chunkId": "cmtjxadio000eyygov3gl3za5_4",
+                            "score": 0.71343744
+                        },
+                        {
+                            "chunkId": "cmtjxadio000eyygov3gl3za5_26",
+                            "score": 0.6866708
+                        }
+                    ],
+                    "metrics": {
+                        "precisionAtK": 1,
+                        "recallAtK": 0.2777777777777778,
+                        "mrrAtK": 1,
+                        "ndcgAtK": 0.6107549150810954
+                    },
+                    "latencyMs": 19.049958999999944
+                },
+                {
+                    "sampleId": "pgg-v1-hazard-types-direct",
+                    "query": "统一灾害类型编码与各类型的分析重点如何对应？",
+                    "retrievedChunkIds": [
+                        "cmtjxadio000eyygov3gl3za5_14",
+                        "cmtjxadio000eyygov3gl3za5_25",
+                        "cmtjxadio000eyygov3gl3za5_1",
+                        "cmtjxadio000eyygov3gl3za5_3",
+                        "cmtjxadio000eyygov3gl3za5_23"
+                    ],
+                    "retrievedResults": [
+                        {
+                            "chunkId": "cmtjxadio000eyygov3gl3za5_14",
+                            "score": 0.60613966
+                        },
+                        {
+                            "chunkId": "cmtjxadio000eyygov3gl3za5_25",
+                            "score": 0.55351025
+                        },
+                        {
+                            "chunkId": "cmtjxadio000eyygov3gl3za5_1",
+                            "score": 0.5429769
+                        },
+                        {
+                            "chunkId": "cmtjxadio000eyygov3gl3za5_3",
+                            "score": 0.5424456
+                        },
+                        {
+                            "chunkId": "cmtjxadio000eyygov3gl3za5_23",
+                            "score": 0.5330608
+                        }
+                    ],
+                    "metrics": {
+                        "precisionAtK": 0.8,
+                        "recallAtK": 0.16666666666666666,
+                        "mrrAtK": 1,
+                        "ndcgAtK": 0.3352774199892339
+                    },
+                    "latencyMs": 18.710125000000062
+                },
+                {
+                    "sampleId": "pgg-v1-hazard-types-synonym",
+                    "query": "遇到 UNKNOWN 或 DisasterAware 的额外类型编码时，Guardian 应该如何处理？",
+                    "retrievedChunkIds": [
+                        "cmtjxadio000eyygov3gl3za5_13",
+                        "cmtjxadio000eyygov3gl3za5_2",
+                        "cmtjxadio000eyygov3gl3za5_7",
+                        "cmtjxadio000eyygov3gl3za5_8",
+                        "cmtjxadio000eyygov3gl3za5_23"
+                    ],
+                    "retrievedResults": [
+                        {
+                            "chunkId": "cmtjxadio000eyygov3gl3za5_13",
+                            "score": 0.016162909836065574
+                        },
+                        {
+                            "chunkId": "cmtjxadio000eyygov3gl3za5_2",
+                            "score": 0.015776209677419356
+                        },
+                        {
+                            "chunkId": "cmtjxadio000eyygov3gl3za5_7",
+                            "score": 0.015767934520943667
+                        },
+                        {
+                            "chunkId": "cmtjxadio000eyygov3gl3za5_8",
+                            "score": 0.01522144522144522
+                        },
+                        {
+                            "chunkId": "cmtjxadio000eyygov3gl3za5_23",
+                            "score": 0.015209665955934612
+                        }
+                    ],
+                    "metrics": {
+                        "precisionAtK": 0.6,
+                        "recallAtK": 0.13043478260869565,
+                        "mrrAtK": 1,
+                        "ndcgAtK": 0.17652316920842334
+                    },
+                    "latencyMs": 19.55899999999997
+                },
+                {
+                    "sampleId": "pgg-v1-hazard-types-keywords",
+                    "query": "灾害类型编码与分析重点：EARTHQUAKE｜FLOOD｜VOLCANO｜WILDFIRE｜TROPICAL_CYCLONE｜STORM｜DROUGHT｜TSUNAMI｜LANDSLIDE",
+                    "retrievedChunkIds": [
+                        "cmtjxadio000eyygov3gl3za5_14",
+                        "cmtjxadio000eyygov3gl3za5_28",
+                        "cmtjxadio000eyygov3gl3za5_2",
+                        "cmtjxadio000eyygov3gl3za5_1",
+                        "cmtjxadio000eyygov3gl3za5_26"
+                    ],
+                    "retrievedResults": [
+                        {
+                            "chunkId": "cmtjxadio000eyygov3gl3za5_14",
+                            "score": 0.6481739
+                        },
+                        {
+                            "chunkId": "cmtjxadio000eyygov3gl3za5_28",
+                            "score": 0.62325144
+                        },
+                        {
+                            "chunkId": "cmtjxadio000eyygov3gl3za5_2",
+                            "score": 0.6193046
+                        },
+                        {
+                            "chunkId": "cmtjxadio000eyygov3gl3za5_1",
+                            "score": 0.6165546
+                        },
+                        {
+                            "chunkId": "cmtjxadio000eyygov3gl3za5_26",
+                            "score": 0.615894
+                        }
+                    ],
+                    "metrics": {
+                        "precisionAtK": 1,
+                        "recallAtK": 0.19230769230769232,
+                        "mrrAtK": 1,
+                        "ndcgAtK": 0.32944516002153235
+                    },
+                    "latencyMs": 19.163999999999987
+                },
+                {
+                    "sampleId": "pgg-v1-severity-sources-direct",
+                    "query": "ADVISORY、WATCH、WARNING 在 Guardian 中分别表示什么？",
+                    "retrievedChunkIds": [
+                        "cmtjxadio000eyygov3gl3za5_8",
+                        "cmtjxadio000eyygov3gl3za5_2",
+                        "cmtjxadio000eyygov3gl3za5_11",
+                        "cmtjxadio000eyygov3gl3za5_23",
+                        "cmtjxadio000eyygov3gl3za5_7"
+                    ],
+                    "retrievedResults": [
+                        {
+                            "chunkId": "cmtjxadio000eyygov3gl3za5_8",
+                            "score": 0.01639344262295082
+                        },
+                        {
+                            "chunkId": "cmtjxadio000eyygov3gl3za5_2",
+                            "score": 0.015726495726495725
+                        },
+                        {
+                            "chunkId": "cmtjxadio000eyygov3gl3za5_11",
+                            "score": 0.015367965367965367
+                        },
+                        {
+                            "chunkId": "cmtjxadio000eyygov3gl3za5_23",
+                            "score": 0.015314685314685314
+                        },
+                        {
+                            "chunkId": "cmtjxadio000eyygov3gl3za5_7",
+                            "score": 0.01513526119402985
+                        }
+                    ],
+                    "metrics": {
+                        "precisionAtK": 0.6,
+                        "recallAtK": 0.13043478260869565,
+                        "mrrAtK": 0.5,
+                        "ndcgAtK": 0.37670356190140447
+                    },
+                    "latencyMs": 18.684541999999965
+                },
+                {
+                    "sampleId": "pgg-v1-severity-sources-synonym",
+                    "query": "USGS、NASA EONET 和 GDACS 的数据来源及严重程度映射有什么差异？",
+                    "retrievedChunkIds": [
+                        "cmtjxadio000eyygov3gl3za5_23",
+                        "cmtjxadio000eyygov3gl3za5_8",
+                        "cmtjxadio000eyygov3gl3za5_11",
+                        "cmtjxadio000eyygov3gl3za5_29",
+                        "cmtjxadio000eyygov3gl3za5_1"
+                    ],
+                    "retrievedResults": [
+                        {
+                            "chunkId": "cmtjxadio000eyygov3gl3za5_23",
+                            "score": 0.01631411951348493
+                        },
+                        {
+                            "chunkId": "cmtjxadio000eyygov3gl3za5_8",
+                            "score": 0.01605222734254992
+                        },
+                        {
+                            "chunkId": "cmtjxadio000eyygov3gl3za5_11",
+                            "score": 0.015726495726495725
+                        },
+                        {
+                            "chunkId": "cmtjxadio000eyygov3gl3za5_29",
+                            "score": 0.015687263556116014
+                        },
+                        {
+                            "chunkId": "cmtjxadio000eyygov3gl3za5_1",
+                            "score": 0.015293560606060606
+                        }
+                    ],
+                    "metrics": {
+                        "precisionAtK": 0.6,
+                        "recallAtK": 0.11538461538461539,
+                        "mrrAtK": 0.3333333333333333,
+                        "ndcgAtK": 0.18041738292026835
+                    },
+                    "latencyMs": 18.2326250000001
+                },
+                {
+                    "sampleId": "pgg-v1-severity-sources-keywords",
+                    "query": "DisasterAware 原始字段｜统一 Hazard 字段｜USGS magnitude｜GDACS Red Orange｜NASA ADVISORY",
+                    "retrievedChunkIds": [
+                        "cmtjxadio000eyygov3gl3za5_13",
+                        "cmtjxadio000eyygov3gl3za5_8",
+                        "cmtjxadio000eyygov3gl3za5_1",
+                        "cmtjxadio000eyygov3gl3za5_23",
+                        "cmtjxadio000eyygov3gl3za5_25"
+                    ],
+                    "retrievedResults": [
+                        {
+                            "chunkId": "cmtjxadio000eyygov3gl3za5_13",
+                            "score": 0.01639344262295082
+                        },
+                        {
+                            "chunkId": "cmtjxadio000eyygov3gl3za5_8",
+                            "score": 0.015949820788530467
+                        },
+                        {
+                            "chunkId": "cmtjxadio000eyygov3gl3za5_1",
+                            "score": 0.01545673076923077
+                        },
+                        {
+                            "chunkId": "cmtjxadio000eyygov3gl3za5_23",
+                            "score": 0.015349264705882354
+                        },
+                        {
+                            "chunkId": "cmtjxadio000eyygov3gl3za5_25",
+                            "score": 0.01522144522144522
+                        }
+                    ],
+                    "metrics": {
+                        "precisionAtK": 1,
+                        "recallAtK": 0.25,
+                        "mrrAtK": 1,
+                        "ndcgAtK": 0.8285482329591609
+                    },
+                    "latencyMs": 19.304167000000007
+                },
+                {
+                    "sampleId": "pgg-v1-hazard-guidance-direct",
+                    "query": "在没有完整地点、时间、强度或官方预警时，灾害建议应如何表述？",
+                    "retrievedChunkIds": [
+                        "cmtjxadio000eyygov3gl3za5_14",
+                        "cmtjxadio000eyygov3gl3za5_2",
+                        "cmtjxadio000eyygov3gl3za5_25",
+                        "cmtjxadio000eyygov3gl3za5_27",
+                        "cmtjxadio000eyygov3gl3za5_26"
+                    ],
+                    "retrievedResults": [
+                        {
+                            "chunkId": "cmtjxadio000eyygov3gl3za5_14",
+                            "score": 0.011475409836065573
+                        },
+                        {
+                            "chunkId": "cmtjxadio000eyygov3gl3za5_2",
+                            "score": 0.01129032258064516
+                        },
+                        {
+                            "chunkId": "cmtjxadio000eyygov3gl3za5_25",
+                            "score": 0.01111111111111111
+                        },
+                        {
+                            "chunkId": "cmtjxadio000eyygov3gl3za5_27",
+                            "score": 0.0109375
+                        },
+                        {
+                            "chunkId": "cmtjxadio000eyygov3gl3za5_26",
+                            "score": 0.010769230769230769
+                        }
+                    ],
+                    "metrics": {
+                        "precisionAtK": 1,
+                        "recallAtK": 0.18518518518518517,
+                        "mrrAtK": 1,
+                        "ndcgAtK": 0.5092595013431673
+                    },
+                    "latencyMs": 20.218083999999862
+                },
+                {
+                    "sampleId": "pgg-v1-hazard-guidance-synonym",
+                    "query": "地震、洪水或野火的通用准备建议有哪些，哪些行动不能被回答宣称已经执行？",
+                    "retrievedChunkIds": [
+                        "cmtjxadio000eyygov3gl3za5_5",
+                        "cmtjxadio000eyygov3gl3za5_19",
+                        "cmtjxadio000eyygov3gl3za5_17",
+                        "cmtjxadio000eyygov3gl3za5_26",
+                        "cmtjxadio000eyygov3gl3za5_16"
+                    ],
+                    "retrievedResults": [
+                        {
+                            "chunkId": "cmtjxadio000eyygov3gl3za5_5",
+                            "score": 0.015552884615384614
+                        },
+                        {
+                            "chunkId": "cmtjxadio000eyygov3gl3za5_19",
+                            "score": 0.015293560606060606
+                        },
+                        {
+                            "chunkId": "cmtjxadio000eyygov3gl3za5_17",
+                            "score": 0.011475409836065573
+                        },
+                        {
+                            "chunkId": "cmtjxadio000eyygov3gl3za5_26",
+                            "score": 0.01129032258064516
+                        },
+                        {
+                            "chunkId": "cmtjxadio000eyygov3gl3za5_16",
+                            "score": 0.01111111111111111
+                        }
+                    ],
+                    "metrics": {
+                        "precisionAtK": 1,
+                        "recallAtK": 0.19230769230769232,
+                        "mrrAtK": 1,
+                        "ndcgAtK": 0.39395536790095653
+                    },
+                    "latencyMs": 20.692207999999937
+                },
+                {
+                    "sampleId": "pgg-v1-hazard-guidance-keywords",
+                    "query": "地震：余震｜建筑安全｜海啸；洪水：积水｜水位｜道路；野火：风向｜烟雾｜疏散",
+                    "retrievedChunkIds": [
+                        "cmtjxadio000eyygov3gl3za5_26",
+                        "cmtjxadio000eyygov3gl3za5_5",
+                        "cmtjxadio000eyygov3gl3za5_16",
+                        "cmtjxadio000eyygov3gl3za5_6",
+                        "cmtjxadio000eyygov3gl3za5_17"
+                    ],
+                    "retrievedResults": [
+                        {
+                            "chunkId": "cmtjxadio000eyygov3gl3za5_26",
+                            "score": 0.015776209677419356
+                        },
+                        {
+                            "chunkId": "cmtjxadio000eyygov3gl3za5_5",
+                            "score": 0.015687263556116014
+                        },
+                        {
+                            "chunkId": "cmtjxadio000eyygov3gl3za5_16",
+                            "score": 0.015522875816993464
+                        },
+                        {
+                            "chunkId": "cmtjxadio000eyygov3gl3za5_6",
+                            "score": 0.015293560606060606
+                        },
+                        {
+                            "chunkId": "cmtjxadio000eyygov3gl3za5_17",
+                            "score": 0.011475409836065573
+                        }
+                    ],
+                    "metrics": {
+                        "precisionAtK": 0.8,
+                        "recallAtK": 0.17391304347826086,
+                        "mrrAtK": 1,
+                        "ndcgAtK": 0.8539316501572934
+                    },
+                    "latencyMs": 19.88041599999997
+                },
+                {
+                    "sampleId": "pgg-v1-risk-levels-direct",
+                    "query": "LOW、MEDIUM、HIGH、CRITICAL 四个风险等级分别依据什么？",
+                    "retrievedChunkIds": [
+                        "cmtjxadio000eyygov3gl3za5_21",
+                        "cmtjxadio000eyygov3gl3za5_14",
+                        "cmtjxadio000eyygov3gl3za5_3",
+                        "cmtjxadio000eyygov3gl3za5_15",
+                        "cmtjxadio000eyygov3gl3za5_5"
+                    ],
+                    "retrievedResults": [
+                        {
+                            "chunkId": "cmtjxadio000eyygov3gl3za5_21",
+                            "score": 0.01639344262295082
+                        },
+                        {
+                            "chunkId": "cmtjxadio000eyygov3gl3za5_14",
+                            "score": 0.01129032258064516
+                        },
+                        {
+                            "chunkId": "cmtjxadio000eyygov3gl3za5_3",
+                            "score": 0.01111111111111111
+                        },
+                        {
+                            "chunkId": "cmtjxadio000eyygov3gl3za5_15",
+                            "score": 0.0109375
+                        },
+                        {
+                            "chunkId": "cmtjxadio000eyygov3gl3za5_5",
+                            "score": 0.010769230769230769
+                        }
+                    ],
+                    "metrics": {
+                        "precisionAtK": 1,
+                        "recallAtK": 0.18518518518518517,
+                        "mrrAtK": 1,
+                        "ndcgAtK": 0.47267367657606424
+                    },
+                    "latencyMs": 17.97741599999995
+                },
+                {
+                    "sampleId": "pgg-v1-risk-levels-synonym",
+                    "query": "为什么只有事件数量不能单独触发 HIGH 或 CRITICAL，信息不足时应如何选择等级？",
+                    "retrievedChunkIds": [
+                        "cmtjxadio000eyygov3gl3za5_21",
+                        "cmtjxadio000eyygov3gl3za5_4",
+                        "cmtjxadio000eyygov3gl3za5_23",
+                        "cmtjxadio000eyygov3gl3za5_3",
+                        "cmtjxadio000eyygov3gl3za5_1"
+                    ],
+                    "retrievedResults": [
+                        {
+                            "chunkId": "cmtjxadio000eyygov3gl3za5_21",
+                            "score": 0.01639344262295082
+                        },
+                        {
+                            "chunkId": "cmtjxadio000eyygov3gl3za5_4",
+                            "score": 0.01597782258064516
+                        },
+                        {
+                            "chunkId": "cmtjxadio000eyygov3gl3za5_23",
+                            "score": 0.015949820788530467
+                        },
+                        {
+                            "chunkId": "cmtjxadio000eyygov3gl3za5_3",
+                            "score": 0.01490950226244344
+                        },
+                        {
+                            "chunkId": "cmtjxadio000eyygov3gl3za5_1",
+                            "score": 0.0109375
+                        }
+                    ],
+                    "metrics": {
+                        "precisionAtK": 0.8,
+                        "recallAtK": 0.14814814814814814,
+                        "mrrAtK": 1,
+                        "ndcgAtK": 0.25766562889767874
+                    },
+                    "latencyMs": 18.88804200000004
+                },
+                {
+                    "sampleId": "pgg-v1-risk-levels-keywords",
+                    "query": "risk_level：LOW｜MEDIUM｜HIGH｜CRITICAL｜WARNING｜叠加灾害｜证据不足",
+                    "retrievedChunkIds": [
+                        "cmtjxadio000eyygov3gl3za5_21",
+                        "cmtjxadio000eyygov3gl3za5_23",
+                        "cmtjxadio000eyygov3gl3za5_22",
+                        "cmtjxadio000eyygov3gl3za5_25",
+                        "cmtjxadio000eyygov3gl3za5_4"
+                    ],
+                    "retrievedResults": [
+                        {
+                            "chunkId": "cmtjxadio000eyygov3gl3za5_21",
+                            "score": 0.016237314597970336
+                        },
+                        {
+                            "chunkId": "cmtjxadio000eyygov3gl3za5_23",
+                            "score": 0.015949820788530467
+                        },
+                        {
+                            "chunkId": "cmtjxadio000eyygov3gl3za5_22",
+                            "score": 0.015212150433944069
+                        },
+                        {
+                            "chunkId": "cmtjxadio000eyygov3gl3za5_25",
+                            "score": 0.01129032258064516
+                        },
+                        {
+                            "chunkId": "cmtjxadio000eyygov3gl3za5_4",
+                            "score": 0.0109375
+                        }
+                    ],
+                    "metrics": {
+                        "precisionAtK": 0.8,
+                        "recallAtK": 0.14814814814814814,
+                        "mrrAtK": 1,
+                        "ndcgAtK": 0.27190163823557845
+                    },
+                    "latencyMs": 19.35954099999981
+                },
+                {
+                    "sampleId": "pgg-v1-json-contract-direct",
+                    "query": "工作流 JSON 输出必须包含哪些字段，各字段的数据类型有什么要求？",
+                    "retrievedChunkIds": [
+                        "cmtjxadio000eyygov3gl3za5_22",
+                        "cmtjxadio000eyygov3gl3za5_2",
+                        "cmtjxadio000eyygov3gl3za5_1",
+                        "cmtjxadio000eyygov3gl3za5_28",
+                        "cmtjxadio000eyygov3gl3za5_25"
+                    ],
+                    "retrievedResults": [
+                        {
+                            "chunkId": "cmtjxadio000eyygov3gl3za5_22",
+                            "score": 0.01639344262295082
+                        },
+                        {
+                            "chunkId": "cmtjxadio000eyygov3gl3za5_2",
+                            "score": 0.015286470871449204
+                        },
+                        {
+                            "chunkId": "cmtjxadio000eyygov3gl3za5_1",
+                            "score": 0.014839572192513369
+                        },
+                        {
+                            "chunkId": "cmtjxadio000eyygov3gl3za5_28",
+                            "score": 0.01129032258064516
+                        },
+                        {
+                            "chunkId": "cmtjxadio000eyygov3gl3za5_25",
+                            "score": 0.01111111111111111
+                        }
+                    ],
+                    "metrics": {
+                        "precisionAtK": 1,
+                        "recallAtK": 0.35714285714285715,
+                        "mrrAtK": 1,
+                        "ndcgAtK": 0.7027197006669802
+                    },
+                    "latencyMs": 20.524582999999893
+                },
+                {
+                    "sampleId": "pgg-v1-json-contract-synonym",
+                    "query": "sources 和 limitations 应如何填写，为什么不能从知识库生成当前事件数量或地点？",
+                    "retrievedChunkIds": [
+                        "cmtjxadio000eyygov3gl3za5_23",
+                        "cmtjxadio000eyygov3gl3za5_1",
+                        "cmtjxadio000eyygov3gl3za5_22",
+                        "cmtjxadio000eyygov3gl3za5_4",
+                        "cmtjxadio000eyygov3gl3za5_25"
+                    ],
+                    "retrievedResults": [
+                        {
+                            "chunkId": "cmtjxadio000eyygov3gl3za5_23",
+                            "score": 0.016237314597970336
+                        },
+                        {
+                            "chunkId": "cmtjxadio000eyygov3gl3za5_1",
+                            "score": 0.015286470871449204
+                        },
+                        {
+                            "chunkId": "cmtjxadio000eyygov3gl3za5_22",
+                            "score": 0.015212150433944069
+                        },
+                        {
+                            "chunkId": "cmtjxadio000eyygov3gl3za5_4",
+                            "score": 0.01129032258064516
+                        },
+                        {
+                            "chunkId": "cmtjxadio000eyygov3gl3za5_25",
+                            "score": 0.01111111111111111
+                        }
+                    ],
+                    "metrics": {
+                        "precisionAtK": 0.6,
+                        "recallAtK": 0.15789473684210525,
+                        "mrrAtK": 0.5,
+                        "ndcgAtK": 0.2939523867748632
+                    },
+                    "latencyMs": 20.075333000000228
+                },
+                {
+                    "sampleId": "pgg-v1-json-contract-keywords",
+                    "query": "JSON：result｜summary｜risk_level｜key_findings｜recommendations｜sources｜limitations｜数组｜有效 JSON",
+                    "retrievedChunkIds": [
+                        "cmtjxadio000eyygov3gl3za5_22",
+                        "cmtjxadio000eyygov3gl3za5_3",
+                        "cmtjxadio000eyygov3gl3za5_25",
+                        "cmtjxadio000eyygov3gl3za5_4",
+                        "cmtjxadio000eyygov3gl3za5_2"
+                    ],
+                    "retrievedResults": [
+                        {
+                            "chunkId": "cmtjxadio000eyygov3gl3za5_22",
+                            "score": 0.01639344262295082
+                        },
+                        {
+                            "chunkId": "cmtjxadio000eyygov3gl3za5_3",
+                            "score": 0.01129032258064516
+                        },
+                        {
+                            "chunkId": "cmtjxadio000eyygov3gl3za5_25",
+                            "score": 0.01111111111111111
+                        },
+                        {
+                            "chunkId": "cmtjxadio000eyygov3gl3za5_4",
+                            "score": 0.0109375
+                        },
+                        {
+                            "chunkId": "cmtjxadio000eyygov3gl3za5_2",
+                            "score": 0.010769230769230769
+                        }
+                    ],
+                    "metrics": {
+                        "precisionAtK": 0.8,
+                        "recallAtK": 0.3076923076923077,
+                        "mrrAtK": 1,
+                        "ndcgAtK": 0.6688988050297522
+                    },
+                    "latencyMs": 19.368832999999995
+                },
+                {
+                    "sampleId": "pgg-v1-typical-questions-direct",
+                    "query": "总结当前全球灾害态势时应读取哪些字段？",
+                    "retrievedChunkIds": [
+                        "cmtjxadio000eyygov3gl3za5_28",
+                        "cmtjxadio000eyygov3gl3za5_25",
+                        "cmtjxadio000eyygov3gl3za5_26",
+                        "cmtjxadio000eyygov3gl3za5_2",
+                        "cmtjxadio000eyygov3gl3za5_14"
+                    ],
+                    "retrievedResults": [
+                        {
+                            "chunkId": "cmtjxadio000eyygov3gl3za5_28",
+                            "score": 0.6054326
+                        },
+                        {
+                            "chunkId": "cmtjxadio000eyygov3gl3za5_25",
+                            "score": 0.6040651
+                        },
+                        {
+                            "chunkId": "cmtjxadio000eyygov3gl3za5_26",
+                            "score": 0.6008657
+                        },
+                        {
+                            "chunkId": "cmtjxadio000eyygov3gl3za5_2",
+                            "score": 0.59709454
+                        },
+                        {
+                            "chunkId": "cmtjxadio000eyygov3gl3za5_14",
+                            "score": 0.59094024
+                        }
+                    ],
+                    "metrics": {
+                        "precisionAtK": 1,
+                        "recallAtK": 0.18518518518518517,
+                        "mrrAtK": 1,
+                        "ndcgAtK": 0.36307151201863896
+                    },
+                    "latencyMs": 18.49691699999994
+                },
+                {
+                    "sampleId": "pgg-v1-typical-questions-synonym",
+                    "query": "当前洪水风险有多高？回答前应先核实哪些信息，数据不足时如何表达？",
+                    "retrievedChunkIds": [
+                        "cmtjxadio000eyygov3gl3za5_26",
+                        "cmtjxadio000eyygov3gl3za5_16",
+                        "cmtjxadio000eyygov3gl3za5_20",
+                        "cmtjxadio000eyygov3gl3za5_14",
+                        "cmtjxadio000eyygov3gl3za5_4"
+                    ],
+                    "retrievedResults": [
+                        {
+                            "chunkId": "cmtjxadio000eyygov3gl3za5_26",
+                            "score": 0.01639344262295082
+                        },
+                        {
+                            "chunkId": "cmtjxadio000eyygov3gl3za5_16",
+                            "score": 0.01129032258064516
+                        },
+                        {
+                            "chunkId": "cmtjxadio000eyygov3gl3za5_20",
+                            "score": 0.01111111111111111
+                        },
+                        {
+                            "chunkId": "cmtjxadio000eyygov3gl3za5_14",
+                            "score": 0.0109375
+                        },
+                        {
+                            "chunkId": "cmtjxadio000eyygov3gl3za5_4",
+                            "score": 0.010769230769230769
+                        }
+                    ],
+                    "metrics": {
+                        "precisionAtK": 1,
+                        "recallAtK": 0.17857142857142858,
+                        "mrrAtK": 1,
+                        "ndcgAtK": 0.19496140886776042
+                    },
+                    "latencyMs": 18.710791999999856
+                },
+                {
+                    "sampleId": "pgg-v1-typical-questions-keywords",
+                    "query": "最近地震记录｜recent｜震级｜时间｜严重程度｜不推断伤亡或建筑损坏",
+                    "retrievedChunkIds": [
+                        "cmtjxadio000eyygov3gl3za5_14",
+                        "cmtjxadio000eyygov3gl3za5_2",
+                        "cmtjxadio000eyygov3gl3za5_27",
+                        "cmtjxadio000eyygov3gl3za5_25",
+                        "cmtjxadio000eyygov3gl3za5_1"
+                    ],
+                    "retrievedResults": [
+                        {
+                            "chunkId": "cmtjxadio000eyygov3gl3za5_14",
+                            "score": 0.6075494
+                        },
+                        {
+                            "chunkId": "cmtjxadio000eyygov3gl3za5_2",
+                            "score": 0.60255665
+                        },
+                        {
+                            "chunkId": "cmtjxadio000eyygov3gl3za5_27",
+                            "score": 0.5981514
+                        },
+                        {
+                            "chunkId": "cmtjxadio000eyygov3gl3za5_25",
+                            "score": 0.59497213
+                        },
+                        {
+                            "chunkId": "cmtjxadio000eyygov3gl3za5_1",
+                            "score": 0.5903144
+                        }
+                    ],
+                    "metrics": {
+                        "precisionAtK": 1,
+                        "recallAtK": 0.2631578947368421,
+                        "mrrAtK": 1,
+                        "ndcgAtK": 0.4151234164428055
+                    },
+                    "latencyMs": 17.550458000000162
+                }
+            ],
+            "metadata": {
+                "hashStatus": "computed",
+                "datasetSha256": "9c3b6b988ed65c59001cb3913a7590f2db73dcd5d0270c16fa45a2ac927df817",
+                "topK": 5,
+                "mode": "hybrid",
+                "knowledgeBaseIds": ["cmtjxa48x000dyygofy7skckk"],
+                "retrievalConfig": {
+                    "threshold": 0.2,
+                    "vectorWeight": 0.7,
+                    "embedding": [
+                        {
+                            "knowledgeBaseId": "cmtjxa48x000dyygofy7skckk",
+                            "provider": "ollama",
+                            "model": "mxbai-embed-large:latest",
+                            "dimensions": 1024,
+                            "baseUrl": "http://localhost:11434"
+                        }
+                    ],
+                    "qdrant": {
+                        "url": "http://localhost:6333",
+                        "collectionName": "knowledge_chunks"
+                    }
+                },
+                "gitRevision": "4aaf41b6f3ca64cd9c641da4e7ab6604213dd814",
+                "embedding": [
+                    {
+                        "knowledgeBaseId": "cmtjxa48x000dyygofy7skckk",
+                        "provider": "ollama",
+                        "model": "mxbai-embed-large:latest",
+                        "dimensions": 1024,
+                        "baseUrl": "http://localhost:11434"
+                    }
+                ],
+                "qdrant": {
+                    "url": "http://localhost:6333",
+                    "collectionName": "knowledge_chunks"
+                }
+            }
+        }
+    ]
+}
