@@ -19,7 +19,7 @@
 
 - [x] `pnpm typecheck` 通过。
 - [x] `pnpm build` 通过。
-- [x] AI Engine 单元测试通过：121 个测试通过。
+- [x] AI Engine 单元测试通过：125 个测试通过。
 - [x] 自动化 RAG 检索质量评测机制已实现；真实人工标注集和质量基线仍待补充。
 - [ ] ESLint 警告清零：当前有 19 个警告。
 - [ ] Qdrant 集成测试通过：当前因本地 Qdrant 未启动而跳过。
