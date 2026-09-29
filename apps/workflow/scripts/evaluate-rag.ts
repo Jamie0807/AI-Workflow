@@ -6,17 +6,19 @@ import { isAbsolute, resolve } from 'node:path'
 import { pathToFileURL } from 'node:url'
 import { promisify } from 'node:util'
 
-import type { BaselineComparison, EvaluationMetadata, EvaluationReport, RetrievalMode, RetrieverService } from '@ai-workflow/ai-engine'
+import type { BaselineComparison, EvaluationMetadata, EvaluationReport, RetrievalMode } from '@ai-workflow/ai-engine'
+import { compareWithBaseline, evaluateRetrievalDataset, parseEvaluationDataset, validateEvaluationReport } from '@ai-workflow/ai-engine'
+
 import {
-    compareWithBaseline,
-    createHybridRetriever,
-    createOllamaEmbeddingService,
-    createQdrantFulltextProvider,
-    createQdrantVectorStore,
-    evaluateRetrievalDataset,
-    parseEvaluationDataset,
-    validateEvaluationReport,
-} from '@ai-workflow/ai-engine'
+    CliConfigError,
+    createDatasetRetriever,
+    createEvaluationPrismaClient,
+    createRetrieverMap,
+    type EmbeddingConfigReport,
+    loadKnowledgeBases,
+} from './rag-evaluation-runtime'
+
+export { CliConfigError } from './rag-evaluation-runtime'
 
 const execFileAsync = promisify(execFile)
 
@@ -30,32 +32,6 @@ export interface CliOptions {
     vectorWeight?: number
     topK: number
     outputDir: string
-}
-
-export class CliConfigError extends Error {
-    readonly exitCode = 2
-
-    constructor(message: string) {
-        super(message)
-        this.name = 'CliConfigError'
-    }
-}
-
-interface KnowledgeBaseConfig {
-    id: string
-    embeddingModel: string
-    embeddingProvider: string
-    dimensions: number
-    threshold: number
-    vectorWeight: number
-}
-
-interface EmbeddingConfigReport {
-    knowledgeBaseId: string
-    provider: string
-    model: string
-    dimensions: number
-    baseUrl: string
 }
 
 type CliReportMetadata = Extract<EvaluationMetadata, { hashStatus: 'computed' }> & {
@@ -251,27 +227,6 @@ async function getGitContext(): Promise<{ workspaceRoot: string; revision: strin
     }
 }
 
-async function createEvaluationPrismaClient() {
-    const { PrismaPg } = await import('@prisma/adapter-pg')
-    const { Pool } = await import('pg')
-    const { PrismaClient } = await import('../app/generated/prisma/client')
-    const connectionString = process.env.DATABASE_URL || 'postgresql://postgres:xiaoer@localhost:5433/postgres'
-    const pool = new Pool({ connectionString })
-
-    try {
-        const adapter = new PrismaPg(pool)
-        const client = new PrismaClient({
-            adapter,
-            log: process.env.NODE_ENV === 'development' ? ['query', 'error', 'warn'] : ['error'],
-        })
-
-        return { client, pool }
-    } catch (error) {
-        await pool.end().catch(() => undefined)
-        throw error
-    }
-}
-
 function getSingleValue<T>(values: readonly T[], label: string): T {
     const first = values[0]
     if (first === undefined || values.some(value => value !== first)) {
@@ -279,63 +234,6 @@ function getSingleValue<T>(values: readonly T[], label: string): T {
     }
 
     return first
-}
-
-function createRetrieverMap(knowledgeBases: readonly KnowledgeBaseConfig[]): {
-    retrievers: Map<string, RetrieverService>
-    embeddings: EmbeddingConfigReport[]
-} {
-    const retrievers = new Map<string, RetrieverService>()
-    const embeddings: EmbeddingConfigReport[] = []
-    const baseUrl = process.env.OLLAMA_BASE_URL?.trim() || 'http://localhost:11434'
-    const qdrantUrl = process.env.QDRANT_URL?.trim() || 'http://localhost:6333'
-
-    for (const knowledgeBase of knowledgeBases) {
-        if (knowledgeBase.embeddingProvider.toLowerCase() !== 'ollama') {
-            throw new CliConfigError(
-                `Unsupported embedding provider for Knowledge Base ${knowledgeBase.id}: ${knowledgeBase.embeddingProvider}`
-            )
-        }
-
-        const embeddingService = createOllamaEmbeddingService({
-            model: knowledgeBase.embeddingModel,
-            dimensions: knowledgeBase.dimensions,
-            baseUrl,
-        })
-        const vectorStore = createQdrantVectorStore({
-            url: qdrantUrl,
-            collectionName: 'knowledge_chunks',
-        })
-        const fulltextProvider = createQdrantFulltextProvider(vectorStore)
-        retrievers.set(knowledgeBase.id, createHybridRetriever(embeddingService, vectorStore, fulltextProvider))
-        embeddings.push({
-            knowledgeBaseId: knowledgeBase.id,
-            provider: knowledgeBase.embeddingProvider,
-            model: knowledgeBase.embeddingModel,
-            dimensions: knowledgeBase.dimensions,
-            baseUrl,
-        })
-    }
-
-    return { retrievers, embeddings }
-}
-
-function createDatasetRetriever(retrievers: Map<string, RetrieverService>): RetrieverService {
-    return {
-        async retrieve(options) {
-            const knowledgeBaseId = options.knowledgeBaseIds[0]
-            if (!knowledgeBaseId) {
-                throw new Error('Evaluation query did not specify a knowledge base ID')
-            }
-
-            const retriever = retrievers.get(knowledgeBaseId)
-            if (!retriever) {
-                throw new Error(`No retriever configured for Knowledge Base ${knowledgeBaseId}`)
-            }
-
-            return retriever.retrieve(options)
-        },
-    }
 }
 
 function addCliMetadata(
@@ -528,23 +426,7 @@ export async function main(argv: readonly string[] = process.argv.slice(2)): Pro
 
         const knowledgeBaseIds = [...new Set(dataset.samples.map(sample => sample.knowledgeBaseId))]
         evaluationDatabase = await createEvaluationPrismaClient()
-        const knowledgeBases = (await evaluationDatabase.client.knowledgeBase.findMany({
-            where: { id: { in: knowledgeBaseIds } },
-            select: {
-                id: true,
-                embeddingModel: true,
-                embeddingProvider: true,
-                dimensions: true,
-                threshold: true,
-                vectorWeight: true,
-            },
-        })) as KnowledgeBaseConfig[]
-
-        const foundIds = new Set(knowledgeBases.map(knowledgeBase => knowledgeBase.id))
-        const missingId = knowledgeBaseIds.find(id => !foundIds.has(id))
-        if (missingId) {
-            throw new CliConfigError(`Knowledge Base not found: ${missingId}`)
-        }
+        const knowledgeBases = await loadKnowledgeBases(evaluationDatabase.client, knowledgeBaseIds)
 
         const threshold =
             options.threshold ??
