@@ -1,0 +1,24 @@
+{"id":"pgg-v1-scope-boundary-direct","query":"Prometheus Global Guardian 知识库如何区分实时事实、知识规则和分析判断？","intent":"scope-boundary","knowledgeBaseId":"cmtjxa48x000dyygofy7skckk"}
+{"id":"pgg-v1-scope-boundary-synonym","query":"这个助手的灾害分析回答边界是什么，能否替代官方预警、应急调度或现场指挥？","intent":"scope-boundary","knowledgeBaseId":"cmtjxa48x000dyygofy7skckk"}
+{"id":"pgg-v1-scope-boundary-keywords","query":"实时事实｜知识规则｜分析判断｜非官方预警系统｜现场指挥","intent":"scope-boundary","knowledgeBaseId":"cmtjxa48x000dyygofy7skckk"}
+{"id":"pgg-v1-workflow-fields-direct","query":"hazard_context、location 和 language 分别如何作为工作流输入？","intent":"workflow-fields","knowledgeBaseId":"cmtjxa48x000dyygofy7skckk"}
+{"id":"pgg-v1-workflow-fields-synonym","query":"total、byType、recent 字段各表示什么，recent 有哪些覆盖限制？","intent":"workflow-fields","knowledgeBaseId":"cmtjxa48x000dyygofy7skckk"}
+{"id":"pgg-v1-workflow-fields-keywords","query":"hazard_context｜total｜byType｜recent｜location｜language｜空或不完整快照","intent":"workflow-fields","knowledgeBaseId":"cmtjxa48x000dyygofy7skckk"}
+{"id":"pgg-v1-hazard-types-direct","query":"统一灾害类型编码与各类型的分析重点如何对应？","intent":"hazard-types","knowledgeBaseId":"cmtjxa48x000dyygofy7skckk"}
+{"id":"pgg-v1-hazard-types-synonym","query":"遇到 UNKNOWN 或 DisasterAware 的额外类型编码时，Guardian 应该如何处理？","intent":"hazard-types","knowledgeBaseId":"cmtjxa48x000dyygofy7skckk"}
+{"id":"pgg-v1-hazard-types-keywords","query":"EARTHQUAKE｜FLOOD｜VOLCANO｜WILDFIRE｜TROPICAL_CYCLONE｜STORM｜DROUGHT｜TSUNAMI｜LANDSLIDE","intent":"hazard-types","knowledgeBaseId":"cmtjxa48x000dyygofy7skckk"}
+{"id":"pgg-v1-severity-sources-direct","query":"ADVISORY、WATCH、WARNING 在 Guardian 中分别表示什么？","intent":"severity-sources","knowledgeBaseId":"cmtjxa48x000dyygofy7skckk"}
+{"id":"pgg-v1-severity-sources-synonym","query":"USGS、NASA EONET 和 GDACS 的数据来源及严重程度映射有什么差异？","intent":"severity-sources","knowledgeBaseId":"cmtjxa48x000dyygofy7skckk"}
+{"id":"pgg-v1-severity-sources-keywords","query":"DisasterAware 原始字段｜统一 Hazard 字段｜USGS magnitude｜GDACS Red Orange｜NASA ADVISORY","intent":"severity-sources","knowledgeBaseId":"cmtjxa48x000dyygofy7skckk"}
+{"id":"pgg-v1-hazard-guidance-direct","query":"在没有完整地点、时间、强度或官方预警时，灾害建议应如何表述？","intent":"hazard-guidance","knowledgeBaseId":"cmtjxa48x000dyygofy7skckk"}
+{"id":"pgg-v1-hazard-guidance-synonym","query":"地震、洪水或野火的通用准备建议有哪些，哪些行动不能被回答宣称已经执行？","intent":"hazard-guidance","knowledgeBaseId":"cmtjxa48x000dyygofy7skckk"}
+{"id":"pgg-v1-hazard-guidance-keywords","query":"地震：余震｜建筑安全｜海啸；洪水：积水｜水位｜道路；野火：风向｜烟雾｜疏散","intent":"hazard-guidance","knowledgeBaseId":"cmtjxa48x000dyygofy7skckk"}
+{"id":"pgg-v1-risk-levels-direct","query":"LOW、MEDIUM、HIGH、CRITICAL 四个风险等级分别依据什么？","intent":"risk-levels","knowledgeBaseId":"cmtjxa48x000dyygofy7skckk"}
+{"id":"pgg-v1-risk-levels-synonym","query":"为什么只有事件数量不能单独触发 HIGH 或 CRITICAL，信息不足时应如何选择等级？","intent":"risk-levels","knowledgeBaseId":"cmtjxa48x000dyygofy7skckk"}
+{"id":"pgg-v1-risk-levels-keywords","query":"risk_level：LOW｜MEDIUM｜HIGH｜CRITICAL｜WARNING｜叠加灾害｜证据不足","intent":"risk-levels","knowledgeBaseId":"cmtjxa48x000dyygofy7skckk"}
+{"id":"pgg-v1-json-contract-direct","query":"工作流 JSON 输出必须包含哪些字段，各字段的数据类型有什么要求？","intent":"json-contract","knowledgeBaseId":"cmtjxa48x000dyygofy7skckk"}
+{"id":"pgg-v1-json-contract-synonym","query":"sources 和 limitations 应如何填写，为什么不能从知识库生成当前事件数量或地点？","intent":"json-contract","knowledgeBaseId":"cmtjxa48x000dyygofy7skckk"}
+{"id":"pgg-v1-json-contract-keywords","query":"JSON：result｜summary｜risk_level｜key_findings｜recommendations｜sources｜limitations｜数组｜有效 JSON","intent":"json-contract","knowledgeBaseId":"cmtjxa48x000dyygofy7skckk"}
+{"id":"pgg-v1-typical-questions-direct","query":"请总结当前全球灾害态势，并按类型列出数量。","intent":"typical-questions","knowledgeBaseId":"cmtjxa48x000dyygofy7skckk"}
+{"id":"pgg-v1-typical-questions-synonym","query":"当前洪水风险有多高？回答前应先核实哪些信息，数据不足时如何表达？","intent":"typical-questions","knowledgeBaseId":"cmtjxa48x000dyygofy7skckk"}
+{"id":"pgg-v1-typical-questions-keywords","query":"最近地震记录｜recent｜震级｜时间｜严重程度｜不推断伤亡或建筑损坏","intent":"typical-questions","knowledgeBaseId":"cmtjxa48x000dyygofy7skckk"}

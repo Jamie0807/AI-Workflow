@@ -1,8 +1,15 @@
-// cspell:ignore unreviewed
+// cspell:ignore cmtjxa dyygofy skckk unreviewed
+
+import { existsSync, readFileSync } from 'node:fs'
+import { fileURLToPath } from 'node:url'
 
 import { describe, expect, it } from 'vitest'
 
 import { finalizeAnnotationDataset, parseAnnotationQueries, parseAnnotationReviews } from '..'
+
+const queryCatalogPath = fileURLToPath(
+    new URL('../../../../../../docs/rag/evaluation/prometheus-global-guardian-v1.queries.jsonl', import.meta.url)
+)
 
 const baseQuery = {
     id: 'q-1',
@@ -46,6 +53,33 @@ describe('parseAnnotationQueries', () => {
         [JSON.stringify({ ...baseQuery, knowledgeBaseId: '' }), 'knowledgeBaseId must be a non-empty string'],
     ])('rejects malformed or blank query input %j', (text, message) => {
         expect(() => parseAnnotationQueries(text)).toThrow(message)
+    })
+})
+
+describe('Prometheus Global Guardian query catalog', () => {
+    it('validates the deterministic 24-query catalog', () => {
+        expect(existsSync(queryCatalogPath)).toBe(true)
+
+        const queries = parseAnnotationQueries(readFileSync(queryCatalogPath, 'utf8'))
+        const intentCounts = new Map<string, number>()
+
+        for (const query of queries) {
+            intentCounts.set(query.intent, (intentCounts.get(query.intent) ?? 0) + 1)
+        }
+
+        expect(queries).toHaveLength(24)
+        expect(new Set(queries.map(query => query.id)).size).toBe(24)
+        expect(new Set(queries.map(query => query.knowledgeBaseId))).toEqual(new Set(['cmtjxa48x000dyygofy7skckk']))
+        expect(Object.fromEntries(intentCounts)).toEqual({
+            'scope-boundary': 3,
+            'workflow-fields': 3,
+            'hazard-types': 3,
+            'severity-sources': 3,
+            'hazard-guidance': 3,
+            'risk-levels': 3,
+            'json-contract': 3,
+            'typical-questions': 3,
+        })
     })
 })
 
