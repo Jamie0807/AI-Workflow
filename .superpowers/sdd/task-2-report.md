@@ -73,3 +73,25 @@ Task 2 已完成，范围限定为：
 ## 范围与遗留事项
 
 本任务只修改了查询目录、标注指南、annotation 测试和本报告；没有修改候选生成器、Qdrant、运行时，也没有生成真实候选池、人工标签、正式评测集或基线报告。后续任务仍需在固定语料快照上生成候选并完成人工审阅，才能生成真实质量基线。
+
+## Task 2 review 修复
+
+审查反馈后追加修复：
+
+- 将 `hazard-types` 关键词 query 改为包含中文的“灾害类型编码与分析重点”问法，同时保留统一编码关键词；
+- 将 `typical-questions` 的实时态势总结改为“总结当前全球灾害态势时应读取哪些字段？”，明确询问知识库字段读取规则，不要求知识库提供当前事件事实；
+- 在目录测试中增加 24 条 query 均含中文字符、旧实时事实直接问法不存在以及新字段问法存在的断言；
+- 在标注指南中明确：主要依赖请求 `hazard_context` 实时事实且知识库无可支持内容的 query 必须排除或延期，不得强行补相关 chunk；保留的每条正式 query 仍必须至少有一个非零相关标签。
+
+修复前后测试：
+
+- 修复前：17 个 annotation 测试中 16 个通过、1 个失败；新增目录约束在旧英文关键词 query 上正确失败。
+- 修复后：`pnpm --filter @ai-workflow/ai-engine test -- annotation.test.ts` 为 17/17 通过。
+
+修复后补充验证：
+
+- `pnpm --filter @ai-workflow/ai-engine test`：12 个测试文件、142/142 通过；既有 Qdrant client/server 版本不匹配警告仍存在，但未导致失败。
+- `pnpm --filter @ai-workflow/ai-engine typecheck`：通过。
+- `pnpm exec prettier --check packages/ai-engine/src/knowledge/evaluation/__tests__/annotation.test.ts docs/rag/evaluation/prometheus-global-guardian-v1.annotation-guide.md .superpowers/sdd/task-2-report.md`：通过。
+- `pnpm run spellcheck`：254 个仓库代码文件、0 个拼写问题；仓库配置按设计忽略 docs 和 `.superpowers` 路径。
+- 目录静态校验：24 条、每条 query 含中文字符、旧的实时事实直接问法不存在、新字段问法存在、8 类各 3 条、KB ID 和字段顺序均通过。

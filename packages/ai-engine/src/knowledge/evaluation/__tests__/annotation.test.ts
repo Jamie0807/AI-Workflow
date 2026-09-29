@@ -70,6 +70,9 @@ describe('Prometheus Global Guardian query catalog', () => {
         expect(queries).toHaveLength(24)
         expect(new Set(queries.map(query => query.id)).size).toBe(24)
         expect(new Set(queries.map(query => query.knowledgeBaseId))).toEqual(new Set(['cmtjxa48x000dyygofy7skckk']))
+        expect(queries.every(query => /[\u3400-\u9fff]/u.test(query.query))).toBe(true)
+        expect(queries.map(query => query.query)).not.toContain('请总结当前全球灾害态势，并按类型列出数量。')
+        expect(queries.map(query => query.query)).toContain('总结当前全球灾害态势时应读取哪些字段？')
         expect(Object.fromEntries(intentCounts)).toEqual({
             'scope-boundary': 3,
             'workflow-fields': 3,
