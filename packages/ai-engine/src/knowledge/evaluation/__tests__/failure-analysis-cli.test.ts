@@ -2,7 +2,7 @@
 
 import { execFileSync } from 'node:child_process'
 import { createHash } from 'node:crypto'
-import { mkdtemp, readdir, readFile, rm, writeFile } from 'node:fs/promises'
+import { mkdir, mkdtemp, readdir, readFile, rename as fsRename, rm, writeFile } from 'node:fs/promises'
 import { join, relative } from 'node:path'
 
 import { describe, expect, it, vi } from 'vitest'
@@ -291,16 +291,26 @@ describe('analyze:rag CLI', () => {
         await withFixture(async fixture => {
             await writeFile(fixture.datasetPath, '{"id":"broken"}\nnot-json\n', 'utf8')
             const invalidDataset = await runMain(['--dataset', fixture.datasetPath, '--report', fixture.reportPath])
-            expect(invalidDataset.exitCode).not.toBe(0)
+            expect(invalidDataset.exitCode).toBe(1)
             expect(invalidDataset.stderr).toContain(fixture.datasetPath)
             expect(invalidDataset.stderr).toContain('Invalid evaluation dataset')
 
             await writeFile(fixture.datasetPath, datasetText, 'utf8')
             await writeFile(fixture.reportPath, '{not-json', 'utf8')
             const invalidReport = await runMain(['--dataset', fixture.datasetPath, '--report', fixture.reportPath])
-            expect(invalidReport.exitCode).not.toBe(0)
+            expect(invalidReport.exitCode).toBe(1)
             expect(invalidReport.stderr).toContain(fixture.reportPath)
             expect(invalidReport.stderr).toContain('not valid JSON')
+        })
+    })
+
+    it('returns exit code 1 and the actual path for a missing report', async () => {
+        await withFixture(async fixture => {
+            const missingPath = join(fixture.root, 'missing.report.json')
+            const outcome = await runMain(['--dataset', fixture.datasetPath, '--report', missingPath])
+
+            expect(outcome.exitCode).toBe(1)
+            expect(outcome.stderr).toContain(missingPath)
         })
     })
 
@@ -309,7 +319,7 @@ describe('analyze:rag CLI', () => {
             await writeFile(fixture.reportPath, JSON.stringify({ dataset: { sha256: datasetSha256 } }), 'utf8')
             const outcome = await runMain(['--dataset', fixture.datasetPath, '--report', fixture.reportPath])
 
-            expect(outcome.exitCode).not.toBe(0)
+            expect(outcome.exitCode).toBe(1)
             expect(outcome.stderr).toContain(fixture.reportPath)
             expect(outcome.stderr).toContain('reports must be an array')
         })
@@ -326,16 +336,18 @@ describe('analyze:rag CLI', () => {
 
             await writeFile(fixture.reportPath, JSON.stringify({ ...reportEnvelope, dataset: { sha256: 'wrong-sha' } }), 'utf8')
             const shaConflict = await runMain(['--dataset', fixture.datasetPath, '--report', fixture.reportPath])
-            expect(shaConflict.exitCode).toBe(2)
+            expect(shaConflict.exitCode).toBe(1)
             expect(shaConflict.stderr).toContain('dataset.sha256')
+            expect(shaConflict.stderr).toContain(fixture.datasetPath)
             expect(shaConflict.stderr).toContain(fixture.reportPath)
 
             const reportsWithMetadataShaConflict = createReports()
             reportsWithMetadataShaConflict[0] = createReport('vector', { datasetSha256: 'wrong-mode-sha' })
             await writeFile(fixture.reportPath, JSON.stringify(createReportEnvelope(reportsWithMetadataShaConflict)), 'utf8')
             const metadataShaConflict = await runMain(['--dataset', fixture.datasetPath, '--report', fixture.reportPath])
-            expect(metadataShaConflict.exitCode).toBe(2)
+            expect(metadataShaConflict.exitCode).toBe(1)
             expect(metadataShaConflict.stderr).toContain('vector metadata.datasetSha256')
+            expect(metadataShaConflict.stderr).toContain(fixture.datasetPath)
             expect(metadataShaConflict.stderr).toContain(fixture.reportPath)
 
             const reportsWithMissingQuery = createReports()
@@ -343,6 +355,8 @@ describe('analyze:rag CLI', () => {
             await writeFile(fixture.reportPath, JSON.stringify(createReportEnvelope(reportsWithMissingQuery)), 'utf8')
             const queryMismatch = await runMain(['--dataset', fixture.datasetPath, '--report', fixture.reportPath])
             expect(queryMismatch.exitCode).toBe(1)
+            expect(queryMismatch.stderr).toContain(fixture.datasetPath)
+            expect(queryMismatch.stderr).toContain(fixture.reportPath)
             expect(queryMismatch.stderr).toContain('fulltext is missing report query for sample q-2')
 
             const reportsWithTopKMismatch = createReports()
@@ -350,7 +364,33 @@ describe('analyze:rag CLI', () => {
             await writeFile(fixture.reportPath, JSON.stringify(createReportEnvelope(reportsWithTopKMismatch)), 'utf8')
             const topKMismatch = await runMain(['--dataset', fixture.datasetPath, '--report', fixture.reportPath])
             expect(topKMismatch.exitCode).toBe(1)
+            expect(topKMismatch.stderr).toContain(fixture.datasetPath)
+            expect(topKMismatch.stderr).toContain(fixture.reportPath)
             expect(topKMismatch.stderr).toContain('hybrid topK 3 does not match topK 2')
+        })
+    })
+
+    it('returns input errors with paths and query/chunk location for retrieved ID mismatches read through the CLI', async () => {
+        await withFixture(async fixture => {
+            const reports = createReports()
+            const vectorQueries = reports[0]!.queries.map(query =>
+                query.sampleId === 'q-1'
+                    ? {
+                          ...query,
+                          retrievedResults: [{ chunkId: 'chunk-result-only', score: 1 }],
+                      }
+                    : query
+            )
+            reports[0] = createReport('vector', { queries: vectorQueries })
+            await writeFile(fixture.reportPath, JSON.stringify(createReportEnvelope(reports)), 'utf8')
+
+            const outcome = await runMain(['--dataset', fixture.datasetPath, '--report', fixture.reportPath])
+
+            expect(outcome.exitCode).toBe(1)
+            expect(outcome.stderr).toContain(fixture.datasetPath)
+            expect(outcome.stderr).toContain(fixture.reportPath)
+            expect(outcome.stderr).toContain('mode vector sample q-1')
+            expect(outcome.stderr).toContain('chunk-result-only')
         })
     })
 
@@ -367,6 +407,49 @@ describe('analyze:rag CLI', () => {
                 'simulated Markdown write failure'
             )
             expect(await readdir(fixture.outputDir)).toEqual([])
+        })
+    })
+
+    it('rolls back both outputs and restores old contents when the second publication rename fails', async () => {
+        await withFixture(async fixture => {
+            await mkdir(fixture.outputDir, { recursive: true })
+            const jsonPath = join(fixture.outputDir, 'prometheus-global-guardian-v1.failure-analysis.json')
+            const markdownPath = join(fixture.outputDir, 'prometheus-global-guardian-v1.failure-analysis.md')
+            await writeFile(jsonPath, 'old-json\n', 'utf8')
+            await writeFile(markdownPath, 'old-markdown\n', 'utf8')
+
+            const failingRename = async (source: string, target: string): Promise<void> => {
+                if (source.endsWith('.tmp') && target === markdownPath) {
+                    throw new Error('simulated second publication rename failure')
+                }
+                await fsRename(source, target)
+            }
+
+            await expect(writeFailureAnalysisReports(fixture.outputDir, fixture.result, { rename: failingRename })).rejects.toThrow(
+                'simulated second publication rename failure'
+            )
+
+            expect(await readFile(jsonPath, 'utf8')).toBe('old-json\n')
+            expect(await readFile(markdownPath, 'utf8')).toBe('old-markdown\n')
+            expect((await readdir(fixture.outputDir)).sort()).toEqual([
+                'prometheus-global-guardian-v1.failure-analysis.json',
+                'prometheus-global-guardian-v1.failure-analysis.md',
+            ])
+        })
+    })
+
+    it('uses safe Markdown code spans for dynamic paths and chunk IDs containing backticks', async () => {
+        await withFixture(async fixture => {
+            const unsafeResult = structuredClone(fixture.result)
+            unsafeResult.dataset.path = 'docs/unsafe`dataset.jsonl'
+            unsafeResult.baseline.path = 'docs/unsafe`baseline.report.json'
+            unsafeResult.byMode.vector.queries[0]!.coveredRelevantChunkIds = ['chunk`unsafe']
+
+            const markdown = renderFailureAnalysisMarkdown(unsafeResult)
+
+            expect(markdown).toContain('- Dataset: ``docs/unsafe`dataset.jsonl``')
+            expect(markdown).toContain('- Baseline report: ``docs/unsafe`baseline.report.json``')
+            expect(markdown).toContain('- Covered relevant IDs: ``chunk`unsafe``')
         })
     })
 })

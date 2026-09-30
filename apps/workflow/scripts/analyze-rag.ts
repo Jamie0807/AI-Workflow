@@ -24,6 +24,15 @@ export class CliConfigError extends Error {
     }
 }
 
+export class CliInputError extends Error {
+    readonly exitCode = 1
+
+    constructor(message: string) {
+        super(message)
+        this.name = 'CliInputError'
+    }
+}
+
 export interface FailureAnalysisCliOptions {
     datasetPath: string
     reportPath: string
@@ -32,6 +41,8 @@ export interface FailureAnalysisCliOptions {
 
 export interface FailureAnalysisWriteDependencies {
     writeFile?: (path: string, data: string, encoding: 'utf8') => Promise<void>
+    rename?: (source: string, target: string) => Promise<void>
+    unlink?: (path: string) => Promise<void>
 }
 
 interface GitContext {
@@ -229,7 +240,7 @@ async function readDataset(datasetPath: string): Promise<{ dataset: EvaluationDa
     try {
         text = await readFile(datasetPath, 'utf8')
     } catch (error) {
-        throw new CliConfigError(`Failed to read dataset ${datasetPath}: ${errorMessage(error)}`, 1)
+        throw new CliInputError(`Failed to read dataset ${datasetPath}: ${errorMessage(error)}`)
     }
 
     const sha256 = createHash('sha256').update(text, 'utf8').digest('hex')
@@ -237,7 +248,7 @@ async function readDataset(datasetPath: string): Promise<{ dataset: EvaluationDa
     try {
         dataset = parseEvaluationDataset(text)
     } catch (error) {
-        throw new CliConfigError(`Invalid evaluation dataset ${datasetPath}: ${errorMessage(error)}`)
+        throw new CliInputError(`Invalid evaluation dataset ${datasetPath}: ${errorMessage(error)}`)
     }
 
     return { dataset, sha256 }
@@ -248,30 +259,30 @@ async function readReports(reportPath: string, datasetSha256: string): Promise<E
     try {
         text = await readFile(reportPath, 'utf8')
     } catch (error) {
-        throw new CliConfigError(`Failed to read report ${reportPath}: ${errorMessage(error)}`, 1)
+        throw new CliInputError(`Failed to read report ${reportPath}: ${errorMessage(error)}`)
     }
 
     let parsed: unknown
     try {
         parsed = JSON.parse(text)
     } catch (error) {
-        throw new CliConfigError(`Report ${reportPath} is not valid JSON: ${errorMessage(error)}`)
+        throw new CliInputError(`Report ${reportPath} is not valid JSON: ${errorMessage(error)}`)
     }
     if (!isRecord(parsed) || !Array.isArray(parsed.reports)) {
-        throw new CliConfigError(`Report ${reportPath} reports must be an array`)
+        throw new CliInputError(`Report ${reportPath} reports must be an array`)
     }
 
     const envelope = parsed as unknown as ReportEnvelope
     if (envelope.dataset !== undefined) {
         if (!isRecord(envelope.dataset)) {
-            throw new CliConfigError(`Report ${reportPath} dataset must be an object`)
+            throw new CliInputError(`Report ${reportPath} dataset must be an object`)
         }
         if (envelope.dataset.sha256 !== undefined) {
             if (typeof envelope.dataset.sha256 !== 'string') {
-                throw new CliConfigError(`Report ${reportPath} dataset.sha256 must be a string`)
+                throw new CliInputError(`Report ${reportPath} dataset.sha256 must be a string`)
             }
             if (envelope.dataset.sha256 !== datasetSha256) {
-                throw new CliConfigError(
+                throw new CliInputError(
                     `Report ${reportPath} dataset.sha256 ${envelope.dataset.sha256} does not match dataset SHA ${datasetSha256}`
                 )
             }
@@ -284,12 +295,12 @@ async function readReports(reportPath: string, datasetSha256: string): Promise<E
         const validationErrors = validateEvaluationReport(report, label)
         const structureErrors = getReportStructureErrors(report, label)
         if (validationErrors.length > 0 || structureErrors.length > 0) {
-            throw new CliConfigError(`Report ${reportPath} is malformed: ${[...validationErrors, ...structureErrors].join('; ')}`)
+            throw new CliInputError(`Report ${reportPath} is malformed: ${[...validationErrors, ...structureErrors].join('; ')}`)
         }
 
         const typedReport = report as EvaluationReport
         if (typedReport.metadata?.datasetSha256 !== datasetSha256) {
-            throw new CliConfigError(
+            throw new CliInputError(
                 `Report ${reportPath} mode ${typedReport.mode} metadata.datasetSha256 ${typedReport.metadata?.datasetSha256} does not match dataset SHA ${datasetSha256}`
             )
         }
@@ -297,7 +308,7 @@ async function readReports(reportPath: string, datasetSha256: string): Promise<E
     }
 
     if (reports.length === 0) {
-        throw new CliConfigError(`Report ${reportPath} reports must contain at least one report`)
+        throw new CliInputError(`Report ${reportPath} reports must contain at least one report`)
     }
 
     return reports
@@ -308,11 +319,28 @@ function formatMetric(value: number): string {
 }
 
 function markdownText(value: string): string {
-    return value.replace(/\\/g, '\\\\').replace(/\|/g, '\\|').replace(/\n/g, ' ')
+    return value.replace(/\\/g, '\\\\').replace(/`/g, '\\`').replace(/\|/g, '\\|').replace(/\n/g, ' ')
+}
+
+function markdownCodeSpan(value: string): string {
+    const normalized = value.replace(/\r?\n/g, ' ')
+    let longestBacktickRun = 0
+    let currentBacktickRun = 0
+    for (const character of normalized) {
+        if (character === '`') {
+            currentBacktickRun += 1
+            longestBacktickRun = Math.max(longestBacktickRun, currentBacktickRun)
+        } else {
+            currentBacktickRun = 0
+        }
+    }
+
+    const fence = '`'.repeat(longestBacktickRun + 1)
+    return `${fence}${normalized}${fence}`
 }
 
 function formatIds(ids: readonly string[]): string {
-    return ids.length === 0 ? 'none' : ids.map(id => `\`${markdownText(id)}\``).join(', ')
+    return ids.length === 0 ? 'none' : ids.map(id => markdownCodeSpan(id)).join(', ')
 }
 
 export function renderFailureAnalysisMarkdown(result: FailureAnalysisResult): string {
@@ -321,13 +349,13 @@ export function renderFailureAnalysisMarkdown(result: FailureAnalysisResult): st
         '',
         '## Dataset and baseline',
         '',
-        `- Dataset: \`${markdownText(result.dataset.path)}\``,
-        `- Dataset SHA-256: \`${result.dataset.sha256}\``,
+        `- Dataset: ${markdownCodeSpan(result.dataset.path)}`,
+        `- Dataset SHA-256: ${markdownCodeSpan(result.dataset.sha256)}`,
         `- Samples: ${result.dataset.sampleCount}`,
-        `- Baseline report: \`${markdownText(result.baseline.path)}\``,
+        `- Baseline report: ${markdownCodeSpan(result.baseline.path)}`,
         `- Top-K: ${result.topK}`,
         `- Generated at: ${result.generatedAt}`,
-        `- Git revision: \`${result.gitRevision}\``,
+        `- Git revision: ${markdownCodeSpan(result.gitRevision)}`,
         '',
         '## Mode summary',
         '',
@@ -400,19 +428,59 @@ export async function writeFailureAnalysisReports(
     const stem = basename(result.baseline.path).replace(/\.report\.json$/, '')
     const jsonPath = resolve(outputDir, `${stem}.failure-analysis.json`)
     const markdownPath = resolve(outputDir, `${stem}.failure-analysis.md`)
-    const jsonTempPath = `${jsonPath}.${randomUUID()}.tmp`
-    const markdownTempPath = `${markdownPath}.${randomUUID()}.tmp`
+    const transactionId = randomUUID()
+    const jsonTempPath = `${jsonPath}.${transactionId}.tmp`
+    const markdownTempPath = `${markdownPath}.${transactionId}.tmp`
+    const jsonBackupPath = `${jsonPath}.${transactionId}.bak`
+    const markdownBackupPath = `${markdownPath}.${transactionId}.bak`
     const write = dependencies.writeFile ?? (async (path: string, data: string, encoding: 'utf8') => writeFile(path, data, encoding))
+    const move = dependencies.rename ?? rename
+    const remove = dependencies.unlink ?? unlink
+    const backups: Array<{ target: string; backup: string }> = []
+    const publishedTargets: string[] = []
+
+    const isMissingFileError = (error: unknown): boolean => isRecord(error) && error.code === 'ENOENT'
+    const cleanup = async (path: string): Promise<void> => {
+        await remove(path).catch(() => undefined)
+    }
+    const backupExistingTarget = async (target: string, backup: string): Promise<void> => {
+        try {
+            await move(target, backup)
+            backups.push({ target, backup })
+        } catch (error) {
+            if (!isMissingFileError(error)) {
+                throw error
+            }
+        }
+    }
 
     try {
         await write(jsonTempPath, `${JSON.stringify(result, null, 2)}\n`, 'utf8')
         await write(markdownTempPath, renderFailureAnalysisMarkdown(result), 'utf8')
-        await rename(jsonTempPath, jsonPath)
-        await rename(markdownTempPath, markdownPath)
-    } finally {
-        await unlink(jsonTempPath).catch(() => undefined)
-        await unlink(markdownTempPath).catch(() => undefined)
+        await backupExistingTarget(jsonPath, jsonBackupPath)
+        await backupExistingTarget(markdownPath, markdownBackupPath)
+        await move(jsonTempPath, jsonPath)
+        publishedTargets.push(jsonPath)
+        await move(markdownTempPath, markdownPath)
+        publishedTargets.push(markdownPath)
+    } catch (error) {
+        for (const target of publishedTargets.reverse()) {
+            await cleanup(target)
+        }
+        for (const { target, backup } of backups.reverse()) {
+            await move(backup, target).catch(() => undefined)
+        }
+        await cleanup(jsonTempPath)
+        await cleanup(markdownTempPath)
+        await cleanup(jsonBackupPath)
+        await cleanup(markdownBackupPath)
+        throw error
     }
+
+    await cleanup(jsonTempPath)
+    await cleanup(markdownTempPath)
+    await cleanup(jsonBackupPath)
+    await cleanup(markdownBackupPath)
 
     return { jsonPath, markdownPath }
 }
@@ -431,7 +499,15 @@ export async function main(argv: readonly string[] = process.argv.slice(2)): Pro
         const datasetPath = resolveWorkspacePath(options.datasetPath, gitContext.workspaceRoot)
         const reportPath = resolveWorkspacePath(options.reportPath, gitContext.workspaceRoot)
         const { dataset, sha256: datasetSha256 } = await readDataset(datasetPath)
-        const reports = await readReports(reportPath, datasetSha256)
+        let reports: EvaluationReport[]
+        try {
+            reports = await readReports(reportPath, datasetSha256)
+        } catch (error) {
+            if (error instanceof CliInputError) {
+                throw new CliInputError(`${error.message}\nDataset: ${datasetPath}\nReport: ${reportPath}`)
+            }
+            throw error
+        }
         const input = {
             dataset,
             datasetSha256,
@@ -443,7 +519,9 @@ export async function main(argv: readonly string[] = process.argv.slice(2)): Pro
         }
         const validationErrors = validateFailureAnalysisInput(input)
         if (validationErrors.length > 0) {
-            throw new Error(`Invalid RAG failure analysis input:\n${validationErrors.join('\n')}`)
+            throw new CliInputError(
+                `Invalid RAG failure analysis input\nDataset: ${datasetPath}\nReport: ${reportPath}\n${validationErrors.join('\n')}`
+            )
         }
         const result = analyzeRagFailure(input)
         const outputDir = resolveWorkspacePath(options.outputDir, gitContext.workspaceRoot)
@@ -453,7 +531,7 @@ export async function main(argv: readonly string[] = process.argv.slice(2)): Pro
         process.stdout.write(`[analyze:rag] wrote ${markdownPath}\n`)
         return 0
     } catch (error) {
-        const exitCode = error instanceof CliConfigError ? error.exitCode : 1
+        const exitCode = error instanceof CliConfigError || error instanceof CliInputError ? error.exitCode : 1
         process.stderr.write(`[analyze:rag] ${errorMessage(error)}\n`)
         return exitCode
     }
