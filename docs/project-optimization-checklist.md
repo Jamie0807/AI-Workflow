@@ -1,52 +1,64 @@
 # AI Workflow 项目待优化清单
 
 > 更新时间：2026-09-30
-> 来源：项目代码审查
-> 当前状态：待排期
+> 来源：项目代码审查与本地验证
+> 当前状态：1 项已完成基础能力、19 项待排期
 
-本文档记录当前项目中值得持续优化的安全性、可靠性、性能、架构和工程化问题。清单中的“验收标准”用于后续关闭事项时进行验证。
+本文档记录当前项目中值得持续优化的安全性、可靠性、性能、架构和工程化问题。问题按风险而不是编号排序；编号保持稳定，便于提交、Issue 和评审引用。清单中的“验收标准”用于后续关闭事项时进行验证。
 
 ## 1. 总体优先级
 
-| 优先级       | 含义                                                   | 建议处理时间 |
-| ------------ | ------------------------------------------------------ | ------------ |
-| 最高（当前） | 当前开发工作的首要目标                                 | 立即启动     |
-| P0           | 上线前必须处理，可能导致安全事故、数据不一致或任务丢失 | 立即排期     |
-| P1           | 影响核心正确性、性能或规模化能力                       | 第一阶段     |
-| P2           | 影响维护成本、开发体验和长期演进                       | 第二阶段     |
+| 优先级 | 含义                                                   | 建议处理时间 |
+| ------ | ------------------------------------------------------ | ------------ |
+| P0     | 上线前必须处理，可能导致安全事故、数据不一致或任务丢失 | 立即排期     |
+| P1     | 影响核心正确性、性能或规模化能力                       | 第一阶段     |
+| P2     | 影响维护成本、开发体验和长期演进                       | 第二阶段     |
+
+### 审查结论摘要
+
+| 范畴       | 结论                                                                       | 对应事项               |
+| ---------- | -------------------------------------------------------------------------- | ---------------------- |
+| 安全边界   | API Key 可逆存储、HTTP 节点 SSRF、公开执行入口无统一限流，属于上线阻断项   | OPT-001～003           |
+| 数据可靠性 | 发布、文档处理和向量删除缺少事务或可靠任务机制，存在半完成和任务丢失风险   | OPT-004、006、007      |
+| 执行正确性 | 工作流校验、DAG 可达性、取消与节点失败语义仍不完整                         | OPT-005、009、010、014 |
+| RAG 质量   | 首版评测和失败分析已落地，但所有模式完整覆盖率均为 0，需转入针对性质量改进 | OPT-000、011           |
+| 工程基线   | 构建和类型检查通过；测试入口、CI、集成/E2E 覆盖、构建缓存仍缺失            | OPT-018、019           |
 
 ## 2. 当前验证基线
 
 - [x] `pnpm typecheck` 通过。
 - [x] `pnpm build` 通过。
-- [x] AI Engine 单元测试通过：125 个测试通过。
-- [x] 自动化 RAG 检索质量评测机制已实现；真实人工标注集与首个质量基线已完成。
+- [x] AI Engine 单元测试通过：15 个测试文件、207 个测试通过。
+- [x] 自动化 RAG 检索质量评测和失败分析已实现；真实人工标注集与首个质量基线已完成。
 - [ ] ESLint 警告清零：当前有 19 个警告。
-- [ ] Qdrant 集成测试通过：当前因本地 Qdrant 未启动而跳过。
-- [ ] 增加 CI、E2E、负载和安全测试。
+- [ ] 建立真实 PostgreSQL/Qdrant 集成测试：当前只有 mock/单元测试，且本地 Qdrant 1.18.1 与客户端 1.16.2 会输出兼容性警告。
+- [ ] 建立根目录统一测试命令：当前根 `package.json` 没有 `test` script，各应用测试入口不一致。
+- [ ] 增加 CI、API/E2E、负载和安全测试：当前仓库没有 CI workflow。
+- [ ] 清除构建警告：当前 Next.js 会报告多个 lockfile，Turbo `build.outputs` 为空，构建产物未纳入缓存。
 
-## 3. 当前最高优先级及 P0：上线前必须处理
+## 3. 已完成基础能力与持续质量项
 
-### OPT-000 自动化 RAG 检索质量评测（已完成首版，持续优化）
+### OPT-000 RAG 检索质量评测与定向改进（基础能力已完成，持续项）
 
-- 状态：v1 真实人工标注评测集和三模式单人初始质量基线已完成
+- 状态：评测工具链已完成；质量改进、标注扩充和 CI 接入待处理
 - 涉及范围：`packages/ai-engine/src/knowledge/evaluation/**`、`apps/workflow/scripts/evaluate-rag.ts`、`docs/rag/evaluation/**`、评测数据和后续 CI 配置
-- 已完成：评测数据 JSONL 校验、Precision/Recall/MRR/nDCG 指标、p50/p95 延迟、向量/全文/混合模式评测、JSON/Markdown 报告、基线元数据校验和质量回归门禁。
+- 已完成：评测数据 JSONL 校验、Precision/Recall/MRR/nDCG 指标、p50/p95 延迟、向量/全文/混合模式评测、JSON/Markdown 报告、失败分析、基线元数据校验和质量回归门禁。
 - 已完成真实基线：`prometheus-global-guardian-v1` 包含 24 条查询、720 条人工候选决策，固定 Knowledge Base `cmtjxa48x000dyygofy7skckk`，`top-k=5` 覆盖 vector、fulltext、hybrid；报告位于 `docs/rag/evaluation/baselines/`。
-- 当前限制：`example.jsonl` 仍只使用虚构 ID，仅用于解析和工具链示例；当前真实基线是单人初始基线，尚未完成第二标注人一致性验证，也未覆盖无答案查询和最终答案生成质量。
+- 当前结果：vector 的 Precision@5 / Recall@5 / MRR / nDCG 为 `0.8750 / 0.1985 / 0.8958 / 0.4741`；hybrid 为 `0.8583 / 0.1957 / 0.9097 / 0.4724`；fulltext 为 `0.4583 / 0.1064 / 0.6667 / 0.3224`。三种模式的完整覆盖查询数均为 `0/24`，说明下一步应优先改善切分和召回，而不是继续扩展评测框架。
+- 当前限制：`example.jsonl` 仍只使用虚构 ID，仅用于解析和工具链示例；真实基线是单人初始基线，尚未完成第二标注人一致性验证，也未覆盖无答案查询和最终答案生成质量。
 - 建议：
-    - 建立版本化的代表性查询评测集，为每条查询标注预期相关文档或 chunk；记录数据来源和标注约定；
-    - 编写可重复运行的评测器，连接真实 Retriever，并覆盖向量、全文和混合检索及关键配置（如 topK、阈值）；
-    - 计算并输出 Recall@K、Precision@K、MRR、nDCG@K 等排序指标，同时记录检索延迟；不同策略的原始相似度分数不直接横向比较；
-    - 同时提供机器可读结果和便于审阅的报告，保存评测集、运行配置、代码版本和基线，便于复现与比较；
-    - 将指标计算和评测器本身纳入自动化测试；在 CI 或专用集成评测中检测相对基线的回归，并明确 Qdrant 等依赖不可用时的处理方式；
-    - 先建立可信质量基线，再依据评测结果调整切分、Embedding、检索策略和参数；当前范围聚焦检索质量，不以 LLM 生成答案评分替代检索评测。
+    - 根据失败分析先处理覆盖率最低的同义表达、灾害类型和风险等级查询；
+    - 比较 chunk size/overlap、标题或元数据注入、topK、阈值、RRF 权重和 rerank 的收益，每次只改变一组变量；
+    - 增加第二标注人并记录一致性结果，补充无答案、越界和对抗查询；
+    - 将固定数据集的轻量回归门禁接入 CI；真实 Qdrant 评测放入可重复的专用集成任务，依赖不可用时明确失败或标记；
+    - 检索指标稳定后另建最终答案质量评测，不以 LLM 答案评分替代检索评测。
 - 验收标准：
-    - 有来源清楚、经过人工相关性标注且纳入版本管理的评测集；
-    - 可以对真实检索链路重复运行，比较向量、全文、混合策略及关键参数；
-    - 报告至少包含 Recall@K、MRR、nDCG@K 和检索延迟，并注明评测配置；
-    - 指标计算有自动化测试，结果可与固定基线比较并识别质量回归；
-    - 评测依赖缺失或评测失败时会明确报错/标记，不会被静默跳过。
+    - 第二标注人完成抽样复核并记录一致性；评测集包含无答案和越界查询；
+    - 至少一项候选改进通过固定基线证明 Recall@5/nDCG@5 提升，且 p95 延迟和误报没有越过预算；
+    - 固定数据集回归门禁进入 CI，真实依赖缺失或评测失败不会被静默跳过；
+    - 评测报告保留数据集 hash、配置、代码版本和逐查询失败分析，可重复生成。
+
+## 4. P0：上线前必须处理
 
 ### OPT-001 API Key 生成和存储安全
 
@@ -162,23 +174,26 @@
     - Qdrant 删除失败会进入可重试状态；
     - 有 PostgreSQL 与 Qdrant 一致性检查脚本。
 
-### OPT-008 生产配置和 CORS 安全
+### OPT-008 生产配置、会话和 CORS 安全
 
 - 状态：待处理
-- 涉及文件：`docker/docker-compose.yml`、`apps/workflow/lib/prisma.ts`、`apps/webapp/lib/prisma.ts`、`apps/api-server/src/prisma/prisma.service.ts`、`apps/api-server/src/main.ts`
-- 问题：代码和 Docker 配置包含默认数据库密码；数据库连接缺失时会回退到默认连接串；API Server 使用 `origin: true` 开放 CORS。
+- 涉及文件：`docker/docker-compose.yml`、`apps/workflow/lib/prisma.ts`、`apps/webapp/lib/prisma.ts`、`apps/api-server/src/prisma/prisma.service.ts`、`apps/api-server/src/main.ts`、`apps/workflow/lib/auth.ts`、`apps/workflow/app/api/auth/**`
+- 问题：代码和 Docker 配置包含默认数据库密码；数据库连接缺失时会回退到默认连接串；`JWT_SECRET` 依赖非空断言而非启动校验；API Server 使用 `origin: true` 开放 CORS；登录、注册和验证入口没有统一的限流及令牌生命周期策略。
 - 建议：
     - 生产环境缺少必要环境变量时启动失败；
     - 默认凭据只保留在 `.env.example`；
     - 使用 secret manager 或部署平台密钥；
-    - CORS 改为明确的生产域名白名单。
+    - CORS 改为明确的生产域名白名单；
+    - 为登录、注册、验证和重发邮件增加限流，验证令牌增加过期时间、单次使用和重发/轮换机制；
+    - 明确 Cookie 会话的 CSRF 防护、密钥轮换和强制失效策略。
 - 验收标准：
     - 生产环境不会使用默认数据库密码；
     - 缺少 `DATABASE_URL`、`JWT_SECRET` 等变量时启动直接失败；
     - 未授权 Origin 被拒绝；
+    - 登录暴力破解和注册/邮件滥用会被限流；过期或已轮换的验证令牌不可使用；
     - 开发环境仍可通过示例配置启动。
 
-## 4. P1：正确性和性能
+## 5. P1：正确性和性能
 
 ### OPT-009 修复 DAG 可达性、分支和并行执行
 
@@ -213,22 +228,24 @@
     - SSE 客户端断开后服务端任务可以取消；
     - 有超时和取消测试。
 
-### OPT-011 RAG 模型、维度和检索配置一致性
+### OPT-011 RAG 模型、维度、检索配置和依赖版本一致性
 
 - 状态：待处理
 - 涉及文件：`packages/ai-engine/src/nodes/executors/knowledge-executor.ts`、`packages/ai-engine/src/knowledge/embeddings/ollama-embeddings.ts`、`packages/ai-engine/src/knowledge/store/qdrant-store.ts`、`apps/workflow/app/api/knowledge/[id]/search/route.ts`
-- 问题：Knowledge Executor 固定使用默认 Embedding 模型和 1024 维；Qdrant collection 已存在时不校验维度；全文检索一次性读取最多 1000 条，并用未经转义的查询词创建 RegExp。
+- 问题：Knowledge Executor 固定使用默认 Embedding 模型和 1024 维；Qdrant collection 已存在时不校验维度；全文检索一次性读取最多 1000 条，并用未经转义的查询词创建 RegExp；Docker 使用浮动的 Qdrant `latest`，当前服务端 1.18.1 与客户端 1.16.2 已输出兼容性警告。
 - 建议：
     - 将 Embedding provider、模型、维度和 collection 版本纳入知识库运行时配置；
     - 创建或使用 collection 时校验维度；
     - 使用真正的全文索引或分页 scroll；
     - 对正则特殊字符转义，最好移除用户输入 RegExp；
-    - 校验 Embedding 返回向量维度。
+    - 校验 Embedding 返回向量维度；
+    - 固定 Qdrant 服务端镜像版本，并用兼容矩阵或集成测试同步升级客户端和服务端。
 - 验收标准：
     - 不同 Embedding 配置不会互相写入错误 collection；
     - 特殊字符查询不会返回 500；
     - 大知识库检索不会一次性加载全部切片；
-    - 向量维度不一致时有明确错误。
+    - 向量维度不一致时有明确错误；
+    - Qdrant 集成测试不输出版本兼容性警告。
 
 ### OPT-012 优化统计和历史查询
 
@@ -277,13 +294,13 @@
     - 不会静默选择错误分支；
     - 失败节点能正确更新执行记录和 SSE 状态。
 
-## 5. P2：架构、前端和工程化
+## 6. P2：架构、前端和工程化
 
 ### OPT-015 统一 Prisma schema 和生成代码
 
 - 状态：待处理
 - 涉及文件：`apps/workflow/prisma/schema.prisma`、`apps/api-server/prisma/schema.prisma`、`apps/webapp/prisma/schema.prisma`、各目录下 `generated/prisma`
-- 问题：三个应用维护同构 schema，并提交大量生成代码，容易出现 schema、migration 和客户端版本漂移。
+- 问题：三个应用维护重复 schema，并提交大量生成代码；当前内容已经漂移：Workflow schema 包含知识库模型，而 WebApp 和 API Server schema 不包含，只有 Workflow 目录具备完整数据模型。
 - 建议：
     - 以 `apps/workflow/prisma` 作为唯一 migration 来源；
     - 抽出共享 Prisma client package；
@@ -293,7 +310,8 @@
 - 验收标准：
     - 数据模型只有一个权威来源；
     - API Server、WebApp 和主应用使用同一版本 client；
-    - migration deploy 和 generate 流程可以一键执行。
+    - migration deploy 和 generate 流程可以一键执行；
+    - CI 能检测 schema、migration 或生成客户端未同步。
 
 ### OPT-016 清理 Next.js 和依赖管理警告
 
@@ -329,7 +347,7 @@
 
 - 状态：待处理
 - 涉及文件：仓库根目录、`packages/ai-engine/src/**/__tests__`、各应用测试目录
-- 问题：当前主要是 AI Engine 单元测试，缺少 API、数据库、SSE、前端和安全回归测试。
+- 问题：当前主要是 AI Engine 单元测试；仓库没有 CI workflow，也没有覆盖 API、真实数据库/Qdrant、SSE、前端和安全边界的回归测试。
 - 建议：
     - CI 至少执行 lint、typecheck、unit test、build；
     - 增加 PostgreSQL/Qdrant 集成测试服务；
@@ -338,19 +356,28 @@
     - 增加大 DAG、大文档和并发执行压测。
 - 验收标准：
     - Pull Request 自动阻止 lint、类型、测试或构建失败；
-    - Qdrant 集成测试不再静默跳过；
+    - PostgreSQL/Qdrant 集成测试在真实依赖上运行，依赖不可用时明确失败而非静默通过；
     - 关键发布、运行、删除和权限场景都有自动化覆盖。
 
-## 6. 推荐实施顺序
+### OPT-019 统一测试入口、包构建依赖和 Turbo 缓存
 
-### 第一阶段：建立 RAG 检索质量基线（当前最高优先级）
+- 状态：待处理
+- 涉及文件：根 `package.json`、`turbo.json`、各 workspace `package.json`、`packages/ai-engine/package.json`
+- 问题：根目录没有 `test` script；Workflow、WebApp 和 API Server 没有统一测试入口；AI Engine 以 `build/**` 作为包入口，消费方测试可能读取过期产物；Turbo 的 `build.outputs` 为空，无法可靠缓存或校验包构建结果。
+- 建议：
+    - 为每个 workspace 提供一致的 `test` / `test:integration` 命令，根目录通过 Turbo 编排；
+    - 明确测试对上游包 `build` 的依赖，或在测试环境直接解析源码，杜绝旧产物影响结果；
+    - 在 Turbo 中声明 `.next/**`、`dist/**`、`build/**` 等实际输出，并排除缓存目录；
+    - 增加“干净 checkout 一条命令验证”的脚本和 CI job。
+- 验收标准：
+    - 全新 checkout 执行一个根命令即可完成全部单元测试；
+    - 修改 AI Engine 导出后，消费方测试无需手工预构建也不会读取旧产物；
+    - 连续两次构建能命中 Turbo 缓存，且缓存不会掩盖缺失产物；
+    - 本地与 CI 使用相同的验证命令。
 
-- [x] OPT-000 自动化 RAG 检索质量评测机制
-- [x] OPT-000 真实人工标注评测集与首个质量基线
+## 7. 推荐实施顺序
 
-首轮基线已完成。下一步优先进行第二标注人一致性评测、补充无答案查询、评估 LLM 最终答案质量，并依据基线结果确定切分、embedding、rerank 和检索参数改进的收益和顺序。
-
-### 第二阶段：安全和数据可靠性
+### 第一阶段：安全和数据可靠性（当前最高优先级）
 
 - [ ] OPT-001 API Key 安全
 - [ ] OPT-002 SSRF 防护
@@ -361,29 +388,34 @@
 - [ ] OPT-007 向量一致性
 - [ ] OPT-008 生产配置和 CORS
 
-### 第三阶段：执行引擎和 RAG
+### 第二阶段：执行正确性和 RAG 质量
 
 - [ ] OPT-009 DAG 可达性、分支和并行执行
 - [ ] OPT-010 超时、取消和运行时配置
 - [ ] OPT-011 RAG 配置一致性
 - [ ] OPT-014 节点失败策略
+- [ ] OPT-000 基于失败分析改善召回，并补充双人标注、无答案和答案质量评测
 
-### 第四阶段：性能和长期维护
+### 第三阶段：性能和工程基线
 
 - [ ] OPT-012 统计和历史查询
 - [ ] OPT-013 日志和数据保留
+- [ ] OPT-018 CI、E2E 和安全测试
+- [ ] OPT-019 测试入口、构建依赖和 Turbo 缓存
+
+### 第四阶段：长期维护
+
 - [ ] OPT-015 Prisma schema 统一
 - [ ] OPT-016 lockfile 和构建告警
 - [ ] OPT-017 React 警告清理
-- [ ] OPT-018 CI、E2E 和安全测试
 
-## 7. 完成定义
+## 8. 完成定义
 
 本清单中的事项只有在以下条件全部满足后才可以标记为完成：
 
 - 已完成代码或配置变更；
 - 已增加对应的自动化测试或验证脚本；
-- `pnpm lint`、`pnpm typecheck`、`pnpm build` 通过；
+- `pnpm lint`、`pnpm typecheck`、`pnpm test`、`pnpm build` 通过；其中 `pnpm test` 在 OPT-019 完成后成为统一入口；
 - 相关集成测试在真实依赖服务上通过；
 - 文档、环境变量和部署说明已同步更新；
 - 没有引入新的未解释 warning、TODO 或数据迁移风险。
