@@ -1,0 +1,84 @@
+name: Load smoke
+
+on:
+    workflow_dispatch:
+        inputs:
+            load_url:
+                description: URL to exercise
+                required: false
+                default: http://127.0.0.1:3000/account/login
+            duration_ms:
+                description: Bounded duration in milliseconds
+                required: false
+                default: '30000'
+            concurrency:
+                description: Fixed worker count
+                required: false
+                default: '4'
+            max_error_rate:
+                description: Maximum allowed error rate from 0 to 1
+                required: false
+                default: '0'
+    schedule:
+        - cron: '30 2 * * 1'
+
+permissions:
+    contents: read
+
+env:
+    NODE_ENV: test
+    DATABASE_URL: postgresql://ci:ci@127.0.0.1:5434/ai_workflow_test
+    JWT_SECRET: ci-e2e-jwt-secret
+    QDRANT_URL: http://127.0.0.1:6335
+    OLLAMA_BASE_URL: http://127.0.0.1:11434
+    WORKFLOW_BASE_URL: http://127.0.0.1:3000
+    TEST_QDRANT_URL: http://127.0.0.1:6335
+    TEST_OLLAMA_URL: http://127.0.0.1:11434
+    NEXT_TELEMETRY_DISABLED: '1'
+
+jobs:
+    load:
+        name: Load smoke
+        runs-on: ubuntu-latest
+        env:
+            LOAD_URL: ${{ inputs.load_url || 'http://127.0.0.1:3000/account/login' }}
+            LOAD_DURATION_MS: ${{ inputs.duration_ms || '30000' }}
+            LOAD_CONCURRENCY: ${{ inputs.concurrency || '4' }}
+            LOAD_MAX_ERROR_RATE: ${{ inputs.max_error_rate || '0' }}
+        steps:
+            - uses: actions/checkout@v4
+            - uses: pnpm/action-setup@v4
+              with:
+                  version: 9.12.3
+            - uses: actions/setup-node@v4
+              with:
+                  node-version: 22
+                  cache: pnpm
+            - run: pnpm install --frozen-lockfile
+            - run: mkdir -p tests/.artifacts
+            - run: docker compose -f docker/docker-compose.test.yml up -d --wait
+            - run: pnpm --filter @ai-workflow/workflow exec prisma migrate deploy
+            - run: pnpm test:prepare
+            - run: |
+                  OLLAMA_PORT=11434 node tests/support/fake-ollama.mjs > tests/.artifacts/fake-ollama.log 2>&1 &
+                  DATABASE_URL="$DATABASE_URL" JWT_SECRET="$JWT_SECRET" QDRANT_URL="$QDRANT_URL" OLLAMA_BASE_URL="$OLLAMA_BASE_URL" PORT=3000 \
+                    pnpm --filter @ai-workflow/workflow exec next dev --hostname 127.0.0.1 --port 3000 > tests/.artifacts/workflow.log 2>&1 &
+            - run: node tests/support/wait-for-services.mjs
+              env:
+                  SERVICE_ATTEMPTS: '60'
+                  SERVICE_DELAY_MS: '1000'
+                  WEBAPP_BASE_URL: http://127.0.0.1:3000
+            - run: set -o pipefail; pnpm test:load | tee tests/.artifacts/load-summary.json
+            - if: always()
+              run: |
+                  docker compose -f docker/docker-compose.test.yml logs --no-color > tests/.artifacts/test-compose.log || true
+            - if: always()
+              uses: actions/upload-artifact@v4
+              with:
+                  name: load-smoke-diagnostics
+                  if-no-files-found: ignore
+                  path: |
+                      tests/.artifacts/load-summary.json
+                      tests/.artifacts/*.log
+            - if: always()
+              run: docker compose -f docker/docker-compose.test.yml down -v

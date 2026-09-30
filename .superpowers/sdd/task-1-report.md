@@ -1,64 +1,37 @@
-# Task 1 实现报告：单模式 RAG 失败分析
+# OPT-018 Task 1 实施报告
 
-## 状态
+## STATUS
 
-已完成。实现限定在单模式纯分析 API；未实现 CLI、文件读写、外部服务访问或跨模式组合。
+DONE_WITH_CONCERNS
 
-## 改动文件
+## 修改文件
 
-- `packages/ai-engine/src/knowledge/evaluation/failure-analysis.ts`
-    - 定义完整的可序列化失败分析类型：模式、逐查询诊断、单模式 summary、跨模式结果类型。
-    - 导出固定顺序的 `FAILURE_ANALYSIS_MODES`。
-    - 实现 `validateModeFailureInput(dataset, report)`。
-    - 实现 `analyzeModeFailure(dataset, report)`。
-    - 使用数据集人工相关性等级计算 Top-K 覆盖、遗漏、误召回、最高相关性、覆盖状态、核心遗漏和 background-only；保留报告正式指标与延迟。
-    - 实现单模式 summary：覆盖状态计数、background-only 计数、误召回总数/平均值、按遗漏次数降序且 chunk ID 升序的最常遗漏 chunk。
-- `packages/ai-engine/src/knowledge/evaluation/__tests__/failure-analysis.test.ts`
-    - 增加三种覆盖状态和 relevance 1/2/3 口径测试。
-    - 增加单模式 summary、模式字段、查询 sample ID、重复查询、重复 retrieved chunk、retrievedResults ID 集合和重复标注 chunk 校验测试。
-- `packages/ai-engine/src/knowledge/evaluation/index.ts`
-    - 增加单模式函数、模式常量和公开类型导出。
+- `package.json`：增加 `test`、`test:integration`、`test:e2e`、`test:security`、`test:load`、`test:prepare` 命令，并添加 `@playwright/test`。
+- `apps/workflow/package.json`：添加 `test:seed` 入口和 `tsx` 开发依赖。
+- `playwright.config.ts`：配置 integration、security、e2e 三个 Playwright projects 及简报指定默认项。
+- `tests/unit/test-command-contract.mjs`：添加根测试命令和 Workflow seed 命令契约测试。
+- `pnpm-lock.yaml`：通过 pnpm 安装更新；解析到 `@playwright/test` 1.63.0 和 `tsx` 4.21.0。
 
-## 关键行为
+另发现 worktree 原有未跟踪文件 `.superpowers/sdd/opt-018-progress.md`，未修改。
 
-- relevance `>= 1` 计入相关覆盖；只有 relevance `>= 2` 的遗漏 chunk 进入 `missedCoreChunkIds`。
-- 检索结果严格按报告原始顺序处理，并在 `report.config.topK` 处截断；不使用 score 推断原因。
-- `retrievedResults` 只参与 chunk ID 集合一致性校验。
-- 输入校验错误包含 mode、sample ID 或 chunk ID，便于后续 CLI 定位。
-- 模块只依赖 TypeScript 数据类型和内存中的 `Map`/`Set`，不读取文件、不访问数据库、Qdrant、Ollama 或 LLM。
+## TDD RED/GREEN
 
-## TDD 与验证
+- RED：新增测试后运行 `node --test tests/unit/test-command-contract.mjs`。退出码 1；两个测试分别因根 `test` 命令未定义、Workflow `test:seed` 未定义而失败，符合预期。
+- GREEN：实现命令、依赖和配置后再次运行同一命令。退出码 0；2 个测试通过，0 失败。
 
-先新增分类测试并运行 focused test，确认模块不存在导致测试按预期失败；随后实现最小 API，修正一个测试断言表达问题后重新验证。
+## 实际运行命令及摘要
 
-通过的命令：
+- `node --test tests/unit/test-command-contract.mjs`（实现前）：预期失败，2/2 失败。
+- `pnpm install`：直接访问 npm registry 时 socket 超时并中断；随后 `pnpm install --registry=https://registry.npmmirror.com` 成功，解析 1495 个包并完成安装/锁文件更新。出现 3 个既有弃用子依赖警告。
+- `node --test tests/unit/test-command-contract.mjs`（实现后）：通过，2/2。
+- `pnpm exec tsc --noEmit --pretty false`：失败，输出大量仓库类型错误（输出被截断，约 3336 行）。包括无 `--project` 时的配置/装饰器错误、AI Engine 未构建时的 workspace 类型解析错误及现存源码类型错误。
+- `pnpm exec tsc --noEmit --pretty false -p apps/workflow/tsconfig.json`：失败，错误集中于现有 Workflow/AI Engine workspace 类型解析和项目源码类型问题；未发现报告为 `playwright.config.ts` 的错误。
+- `git diff --check`：退出码 0，无 whitespace 错误。
 
-- `pnpm --filter @ai-workflow/ai-engine test -- failure-analysis.test.ts`：1 个测试文件、6/6 tests。
-- `pnpm --filter @ai-workflow/ai-engine typecheck`：通过。
-- `pnpm --filter @ai-workflow/ai-engine build`：ESM、CJS、DTS 构建通过。
-- `pnpm exec prettier --check packages/ai-engine/src/knowledge/evaluation/failure-analysis.ts packages/ai-engine/src/knowledge/evaluation/__tests__/failure-analysis.test.ts packages/ai-engine/src/knowledge/evaluation/index.ts`：通过。
-- `pnpm --filter @ai-workflow/ai-engine test`：14 个测试文件、181/181 tests。
-- `git diff --check`：通过。
+## 未解决问题 / Concerns
 
-## 自审与关注事项
+- 简报指定的 TypeScript 检查未通过，原因涉及当前仓库构建状态与既有类型问题；没有为此修改业务源码或清理 `.next`。
+- 本任务只创建 Workflow 的 `test:seed` 命令入口；其目标 `apps/workflow/scripts/test-seed.ts` 当前不存在。因此 `test:prepare` 的真实 seed 执行需后续任务补上该脚本。
+- 未运行完整根 `test` 或 Playwright 分层测试：这一步只加入运行契约和项目配置，仓库目前没有这些分层测试文件；也未访问任何真实服务。
 
-- 只修改了 Task 1 指定的 AI Engine 文件，并按用户要求覆盖了本报告；没有新增 CLI 或跨模式组合逻辑。
-- 公共 index 仅导出 Task 1 的单模式函数、常量和完整类型；`FailureAnalysisResult` 等跨模式类型只做契约定义，没有实现跨模式计算。
-- 全量测试输出了既有 Qdrant client/server 版本兼容性 stderr 警告（client 1.16.2、server 1.18.1），相关测试仍全部通过；该警告与本次改动无关。
-- 每次命令还会显示本机 `.zprofile` 对不存在 `/opt/homebrew/bin/brew` 的环境提示；不影响测试、类型检查或构建。
-
-## 提交
-
-- Commit message: `feat: add RAG failure analysis core`
-
-## 收尾记录
-
-- 收尾前 staged diff 已复核，最终仅包含以下 3 个文件：
-    - `packages/ai-engine/src/knowledge/evaluation/failure-analysis.ts`
-    - `packages/ai-engine/src/knowledge/evaluation/__tests__/failure-analysis.test.ts`
-    - `packages/ai-engine/src/knowledge/evaluation/index.ts`
-- `.superpowers/sdd/task-1-report.md` 保持为未 staged 修改，不纳入本次提交。
-- `pnpm --filter @ai-workflow/ai-engine test -- failure-analysis.test.ts`：退出码 0；1 个测试文件、6/6 tests 通过。
-- `pnpm --filter @ai-workflow/ai-engine typecheck`：退出码 0，通过。
-- `pnpm --filter @ai-workflow/ai-engine build`：退出码 0；ESM、CJS、DTS 构建成功。
-- `git diff --check`：退出码 0；无 whitespace 错误输出。
+没有创建 Git commit。

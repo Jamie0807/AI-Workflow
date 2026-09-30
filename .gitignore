@@ -15,6 +15,7 @@ out/
 # Caches
 .turbo/
 **/.turbo/
+tests/.artifacts/
 .eslintcache
 .cspellcache
 .stylelintcache

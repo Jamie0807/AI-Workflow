@@ -100,6 +100,7 @@ export default function KnowledgePage() {
             <div className={viewMode === 'grid' ? 'grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5' : 'space-y-3'}>
                 {/* 创建知识库卡片 */}
                 <Card
+                    data-testid="create-knowledge-card"
                     className="flex min-h-[140px] cursor-pointer items-center justify-center border-2 border-dashed border-muted-foreground/20 transition-colors hover:border-blue-400 hover:bg-blue-50/50"
                     onClick={() => setCreateDialogOpen(true)}
                 >

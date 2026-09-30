@@ -1,5 +1,6 @@
 {
     "$schema": "https://turbo.build/schema.json",
+    "globalEnv": ["DATABASE_URL", "JWT_SECRET", "QDRANT_URL", "OLLAMA_BASE_URL", "NODE_ENV", "NEXT_TELEMETRY_DISABLED"],
     "tasks": {
         "build:watch": {
             "cache": false,

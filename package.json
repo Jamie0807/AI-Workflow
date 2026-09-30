@@ -5,6 +5,12 @@
     "main": "index.js",
     "packageManager": "pnpm@9.12.3",
     "scripts": {
+        "test": "pnpm --filter @ai-workflow/ai-engine test && pnpm --filter @ai-workflow/workflow test:user-settings && node --test tests/unit/*.mjs",
+        "test:integration": "playwright test --project=integration",
+        "test:e2e": "playwright test --project=e2e",
+        "test:security": "playwright test --project=security",
+        "test:load": "node tests/load/load-smoke.mjs",
+        "test:prepare": "pnpm --filter @ai-workflow/workflow test:seed",
         "build:watch": "turbo build:watch",
         "build": "turbo build",
         "dev": "turbo dev",
@@ -47,6 +53,7 @@
         ]
     },
     "devDependencies": {
+        "@playwright/test": "^1.51.1",
         "@types/node": "22.9.0",
         "eslint": "9.39.1",
         "@eslint/js": "9.39.1",

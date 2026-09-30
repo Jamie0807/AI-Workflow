@@ -1,0 +1,30 @@
+services:
+    postgres:
+        image: postgres:18
+        ports:
+            - '5434:5432'
+        environment:
+            POSTGRES_USER: ci
+            POSTGRES_PASSWORD: ci
+            POSTGRES_DB: ai_workflow_test
+        healthcheck:
+            test: ['CMD-SHELL', 'pg_isready -U ci -d ai_workflow_test']
+            interval: 5s
+            timeout: 5s
+            retries: 12
+
+    qdrant:
+        image: qdrant/qdrant:v1.16.2
+        ports:
+            - '6335:6333'
+        healthcheck:
+            test:
+                - CMD
+                - bash
+                - -c
+                - >-
+                    exec 3<>/dev/tcp/127.0.0.1/6333 && printf 'GET /readyz HTTP/1.0\r\n\r\n' >&3 &&
+                    grep -q '200 OK' <&3
+            interval: 5s
+            timeout: 5s
+            retries: 12

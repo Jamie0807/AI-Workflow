@@ -345,19 +345,22 @@
 
 ### OPT-018 建立 CI、E2E 和安全测试基线
 
-- 状态：待处理
-- 涉及文件：仓库根目录、`packages/ai-engine/src/**/__tests__`、各应用测试目录
-- 问题：当前主要是 AI Engine 单元测试；仓库没有 CI workflow，也没有覆盖 API、真实数据库/Qdrant、SSE、前端和安全边界的回归测试。
-- 建议：
-    - CI 至少执行 lint、typecheck、unit test、build；
-    - 增加 PostgreSQL/Qdrant 集成测试服务；
-    - 增加 Playwright 登录、编辑、发布、运行和知识库 E2E；
-    - 增加 API Key、SSRF、限流、权限和数据隔离测试；
-    - 增加大 DAG、大文档和并发执行压测。
-- 验收标准：
-    - Pull Request 自动阻止 lint、类型、测试或构建失败；
-    - PostgreSQL/Qdrant 集成测试在真实依赖上运行，依赖不可用时明确失败而非静默通过；
-    - 关键发布、运行、删除和权限场景都有自动化覆盖。
+- 状态：已完成（SSRF、限流、CORS 本身仍按 OPT-002/003/008 待处理）
+- 涉及文件：根 `package.json`、`playwright.config.ts`、`tests/**`、`docker/docker-compose.test.yml`、`.github/workflows/ci.yml`、`.github/workflows/load-smoke.yml`、`docs/testing.md`
+- 实现：
+    - 根目录统一提供 `test`、`test:integration`、`test:e2e`、`test:security`、`test:load` 和 `test:prepare` 入口；
+    - 使用固定版本 PostgreSQL/Qdrant 测试 Compose、幂等种子和确定性 fake Ollama；
+    - Playwright 覆盖登录会话、工作流保存/发布/公开运行、知识库上传/处理/全文检索；
+    - 安全回归覆盖未登录、资源隔离、API Key 缺失/随机/停用/过期/有效路径，并生成机器可读缺口报告；
+    - 负载 smoke 支持固定 worker 池、时长/并发/错误率预算和 p50/p95 摘要；
+    - CI 拆分 quality、integration、security、e2e，并通过手动/定时 workflow 运行 load smoke；失败时上传 Playwright、服务和安全报告。
+- 验收证据：
+    - [x] PR workflow 自动执行 lint、typecheck、unit test、build 和 Playwright discovery；
+    - [x] PostgreSQL/Qdrant 集成测试使用真实服务，服务等待器超时会非零退出；本地 `pnpm test:integration` 通过 3/3；
+    - [x] `pnpm test:security` 通过 4/4，`pnpm test:e2e` 通过 3/3，浏览器 console error/pageerror 检查通过；
+    - [x] `pnpm test:load` 本地 5 秒冒烟通过 460/460，请求错误率 0、p95 74ms；
+    - [ ] OPT-002 SSRF、OPT-003 限流、OPT-008 CORS 仍由安全缺口报告登记，修复后再启用阻断断言。
+- 本地复现命令：见 [`docs/testing.md`](testing.md)；CI 入口：`.github/workflows/ci.yml` 和 `.github/workflows/load-smoke.yml`。
 
 ### OPT-019 统一测试入口、包构建依赖和 Turbo 缓存
 
@@ -400,7 +403,7 @@
 
 - [ ] OPT-012 统计和历史查询
 - [ ] OPT-013 日志和数据保留
-- [ ] OPT-018 CI、E2E 和安全测试
+- [x] OPT-018 CI、E2E 和安全测试
 - [ ] OPT-019 测试入口、构建依赖和 Turbo 缓存
 
 ### 第四阶段：长期维护

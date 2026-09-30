@@ -198,6 +198,7 @@ export const FlowEditorHeader = memo(function FlowEditorHeader({
                             variant={publishStatus.isPublished ? 'secondary' : 'default'}
                             size="sm"
                             aria-label="Open Popover"
+                            data-testid="publish-menu-trigger"
                             className={cn(publishStatus.isPublished && 'bg-green-50 text-green-700 hover:bg-green-100 border-green-200')}
                         >
                             {publishStatus.isPublished ? (

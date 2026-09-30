@@ -126,6 +126,7 @@ export default function AppsPage() {
             <div className={viewMode === 'grid' ? 'grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4' : 'space-y-3'}>
                 {/* 创建应用卡片 */}
                 <Card
+                    data-testid="create-app-card"
                     className="flex items-center justify-center cursor-pointer border-dashed border-2 border-muted-foreground/20 hover:border-blue-400 hover:bg-blue-50/50 transition-colors min-h-[140px]"
                     onClick={() => setCreateDialogOpen(true)}
                 >

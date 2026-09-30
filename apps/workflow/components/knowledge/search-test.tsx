@@ -75,6 +75,7 @@ export function SearchTest() {
                     <Label>查询内容</Label>
                     <div className="relative">
                         <Input
+                            data-testid="knowledge-search-input"
                             placeholder="输入要查询的内容..."
                             value={query}
                             onChange={e => setQuery(e.target.value)}
@@ -119,7 +120,12 @@ export function SearchTest() {
                 </div>
 
                 {/* 搜索按钮 */}
-                <Button className="w-full" onClick={handleSearch} disabled={loading || !query.trim() || !knowledgeBase}>
+                <Button
+                    data-testid="knowledge-search-submit"
+                    className="w-full"
+                    onClick={handleSearch}
+                    disabled={loading || !query.trim() || !knowledgeBase}
+                >
                     {loading ? (
                         <>
                             <Loader2Icon className="size-4 animate-spin" />

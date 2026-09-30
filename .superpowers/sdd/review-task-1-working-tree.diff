@@ -1,0 +1,898 @@
+# Review package: 2d8b9c4..working-tree
+
+## Commit
+2d8b9c4 docs: refresh project optimization checklist
+
+## Tracked diff stat
+ .superpowers/sdd/task-1-report.md | 77 ++++++++++++-----------------------
+ apps/workflow/package.json        |  2 +
+ package.json                      |  7 ++++
+ pnpm-lock.yaml                    | 85 +++++++++++++++++++++++++++++++++++++--
+ 4 files changed, 116 insertions(+), 55 deletions(-)
+
+## Tracked diff
+diff --git a/.superpowers/sdd/task-1-report.md b/.superpowers/sdd/task-1-report.md
+index 21a2337..0fff5b9 100644
+--- a/.superpowers/sdd/task-1-report.md
++++ b/.superpowers/sdd/task-1-report.md
+@@ -1,64 +1,37 @@
+-# Task 1 实现报告：单模式 RAG 失败分析
++# OPT-018 Task 1 实施报告
+ 
+-## 状态
++## STATUS
+ 
+-已完成。实现限定在单模式纯分析 API；未实现 CLI、文件读写、外部服务访问或跨模式组合。
++DONE_WITH_CONCERNS
+ 
+-## 改动文件
++## 修改文件
+ 
+-- `packages/ai-engine/src/knowledge/evaluation/failure-analysis.ts`
+-    - 定义完整的可序列化失败分析类型：模式、逐查询诊断、单模式 summary、跨模式结果类型。
+-    - 导出固定顺序的 `FAILURE_ANALYSIS_MODES`。
+-    - 实现 `validateModeFailureInput(dataset, report)`。
+-    - 实现 `analyzeModeFailure(dataset, report)`。
+-    - 使用数据集人工相关性等级计算 Top-K 覆盖、遗漏、误召回、最高相关性、覆盖状态、核心遗漏和 background-only；保留报告正式指标与延迟。
+-    - 实现单模式 summary：覆盖状态计数、background-only 计数、误召回总数/平均值、按遗漏次数降序且 chunk ID 升序的最常遗漏 chunk。
+-- `packages/ai-engine/src/knowledge/evaluation/__tests__/failure-analysis.test.ts`
+-    - 增加三种覆盖状态和 relevance 1/2/3 口径测试。
+-    - 增加单模式 summary、模式字段、查询 sample ID、重复查询、重复 retrieved chunk、retrievedResults ID 集合和重复标注 chunk 校验测试。
+-- `packages/ai-engine/src/knowledge/evaluation/index.ts`
+-    - 增加单模式函数、模式常量和公开类型导出。
++- `package.json`：增加 `test`、`test:integration`、`test:e2e`、`test:security`、`test:load`、`test:prepare` 命令，并添加 `@playwright/test`。
++- `apps/workflow/package.json`：添加 `test:seed` 入口和 `tsx` 开发依赖。
++- `playwright.config.ts`：配置 integration、security、e2e 三个 Playwright projects 及简报指定默认项。
++- `tests/unit/test-command-contract.mjs`：添加根测试命令和 Workflow seed 命令契约测试。
++- `pnpm-lock.yaml`：通过 pnpm 安装更新；解析到 `@playwright/test` 1.63.0 和 `tsx` 4.21.0。
+ 
+-## 关键行为
++另发现 worktree 原有未跟踪文件 `.superpowers/sdd/opt-018-progress.md`，未修改。
+ 
+-- relevance `>= 1` 计入相关覆盖；只有 relevance `>= 2` 的遗漏 chunk 进入 `missedCoreChunkIds`。
+-- 检索结果严格按报告原始顺序处理，并在 `report.config.topK` 处截断；不使用 score 推断原因。
+-- `retrievedResults` 只参与 chunk ID 集合一致性校验。
+-- 输入校验错误包含 mode、sample ID 或 chunk ID，便于后续 CLI 定位。
+-- 模块只依赖 TypeScript 数据类型和内存中的 `Map`/`Set`，不读取文件、不访问数据库、Qdrant、Ollama 或 LLM。
++## TDD RED/GREEN
+ 
+-## TDD 与验证
++- RED：新增测试后运行 `node --test tests/unit/test-command-contract.mjs`。退出码 1；两个测试分别因根 `test` 命令未定义、Workflow `test:seed` 未定义而失败，符合预期。
++- GREEN：实现命令、依赖和配置后再次运行同一命令。退出码 0；2 个测试通过，0 失败。
+ 
+-先新增分类测试并运行 focused test，确认模块不存在导致测试按预期失败；随后实现最小 API，修正一个测试断言表达问题后重新验证。
++## 实际运行命令及摘要
+ 
+-通过的命令：
++- `node --test tests/unit/test-command-contract.mjs`（实现前）：预期失败，2/2 失败。
++- `pnpm install`：直接访问 npm registry 时 socket 超时并中断；随后 `pnpm install --registry=https://registry.npmmirror.com` 成功，解析 1495 个包并完成安装/锁文件更新。出现 3 个既有弃用子依赖警告。
++- `node --test tests/unit/test-command-contract.mjs`（实现后）：通过，2/2。
++- `pnpm exec tsc --noEmit --pretty false`：失败，输出大量仓库类型错误（输出被截断，约 3336 行）。包括无 `--project` 时的配置/装饰器错误、AI Engine 未构建时的 workspace 类型解析错误及现存源码类型错误。
++- `pnpm exec tsc --noEmit --pretty false -p apps/workflow/tsconfig.json`：失败，错误集中于现有 Workflow/AI Engine workspace 类型解析和项目源码类型问题；未发现报告为 `playwright.config.ts` 的错误。
++- `git diff --check`：退出码 0，无 whitespace 错误。
+ 
+-- `pnpm --filter @ai-workflow/ai-engine test -- failure-analysis.test.ts`：1 个测试文件、6/6 tests。
+-- `pnpm --filter @ai-workflow/ai-engine typecheck`：通过。
+-- `pnpm --filter @ai-workflow/ai-engine build`：ESM、CJS、DTS 构建通过。
+-- `pnpm exec prettier --check packages/ai-engine/src/knowledge/evaluation/failure-analysis.ts packages/ai-engine/src/knowledge/evaluation/__tests__/failure-analysis.test.ts packages/ai-engine/src/knowledge/evaluation/index.ts`：通过。
+-- `pnpm --filter @ai-workflow/ai-engine test`：14 个测试文件、181/181 tests。
+-- `git diff --check`：通过。
++## 未解决问题 / Concerns
+ 
+-## 自审与关注事项
++- 简报指定的 TypeScript 检查未通过，原因涉及当前仓库构建状态与既有类型问题；没有为此修改业务源码或清理 `.next`。
++- 本任务只创建 Workflow 的 `test:seed` 命令入口；其目标 `apps/workflow/scripts/test-seed.ts` 当前不存在。因此 `test:prepare` 的真实 seed 执行需后续任务补上该脚本。
++- 未运行完整根 `test` 或 Playwright 分层测试：这一步只加入运行契约和项目配置，仓库目前没有这些分层测试文件；也未访问任何真实服务。
+ 
+-- 只修改了 Task 1 指定的 AI Engine 文件，并按用户要求覆盖了本报告；没有新增 CLI 或跨模式组合逻辑。
+-- 公共 index 仅导出 Task 1 的单模式函数、常量和完整类型；`FailureAnalysisResult` 等跨模式类型只做契约定义，没有实现跨模式计算。
+-- 全量测试输出了既有 Qdrant client/server 版本兼容性 stderr 警告（client 1.16.2、server 1.18.1），相关测试仍全部通过；该警告与本次改动无关。
+-- 每次命令还会显示本机 `.zprofile` 对不存在 `/opt/homebrew/bin/brew` 的环境提示；不影响测试、类型检查或构建。
+-
+-## 提交
+-
+-- Commit message: `feat: add RAG failure analysis core`
+-
+-## 收尾记录
+-
+-- 收尾前 staged diff 已复核，最终仅包含以下 3 个文件：
+-    - `packages/ai-engine/src/knowledge/evaluation/failure-analysis.ts`
+-    - `packages/ai-engine/src/knowledge/evaluation/__tests__/failure-analysis.test.ts`
+-    - `packages/ai-engine/src/knowledge/evaluation/index.ts`
+-- `.superpowers/sdd/task-1-report.md` 保持为未 staged 修改，不纳入本次提交。
+-- `pnpm --filter @ai-workflow/ai-engine test -- failure-analysis.test.ts`：退出码 0；1 个测试文件、6/6 tests 通过。
+-- `pnpm --filter @ai-workflow/ai-engine typecheck`：退出码 0，通过。
+-- `pnpm --filter @ai-workflow/ai-engine build`：退出码 0；ESM、CJS、DTS 构建成功。
+-- `git diff --check`：退出码 0；无 whitespace 错误输出。
++没有创建 Git commit。
+diff --git a/apps/workflow/package.json b/apps/workflow/package.json
+index 1f3b92d..2898257 100644
+--- a/apps/workflow/package.json
++++ b/apps/workflow/package.json
+@@ -1,19 +1,20 @@
+ {
+     "name": "@ai-workflow/workflow",
+     "version": "0.1.0",
+     "private": true,
+     "scripts": {
+         "dev": "next dev",
+         "build": "next build",
+         "start": "next start",
+         "typecheck": "tsc --noEmit",
++        "test:seed": "tsx scripts/test-seed.ts",
+         "test:user-settings": "node --test --experimental-strip-types lib/user-settings.test.mjs",
+         "evaluate:rag": "../../packages/ai-engine/node_modules/.bin/tsx scripts/evaluate-rag.ts",
+         "analyze:rag": "../../packages/ai-engine/node_modules/.bin/tsx scripts/analyze-rag.ts",
+         "prepare:rag-annotation": "../../packages/ai-engine/node_modules/.bin/tsx scripts/prepare-rag-annotation.ts",
+         "finalize:rag-annotation": "../../packages/ai-engine/node_modules/.bin/tsx scripts/finalize-rag-annotation.ts"
+     },
+     "dependencies": {
+         "@dnd-kit/core": "^6.3.1",
+         "@dnd-kit/modifiers": "^9.0.0",
+         "@dnd-kit/sortable": "^10.0.0",
+@@ -79,13 +80,14 @@
+         "@types/jsonwebtoken": "^9.0.10",
+         "@types/node": "20.19.25",
+         "@types/nodemailer": "^7.0.4",
+         "@types/pg": "^8.16.0",
+         "@types/react": "19.2.7",
+         "@types/react-dom": "19.2.3",
+         "baseline-browser-mapping": "^2.9.11",
+         "dotenv": "^16.4.5",
+         "postcss": "^8.5.6",
+         "tailwindcss": "4.1.18",
++        "tsx": "^4.8.1",
+         "tw-animate-css": "^1.4.0"
+     }
+ }
+diff --git a/package.json b/package.json
+index 1c84063..52fdc25 100644
+--- a/package.json
++++ b/package.json
+@@ -1,17 +1,23 @@
+ {
+     "name": "ai-workflow",
+     "version": "1.0.0",
+     "description": "",
+     "main": "index.js",
+     "packageManager": "pnpm@9.12.3",
+     "scripts": {
++        "test": "pnpm --filter @ai-workflow/ai-engine test && pnpm --filter @ai-workflow/workflow test:user-settings && node --test tests/unit/*.mjs",
++        "test:integration": "playwright test --project=integration",
++        "test:e2e": "playwright test --project=e2e",
++        "test:security": "playwright test --project=security",
++        "test:load": "node tests/load/load-smoke.mjs",
++        "test:prepare": "pnpm --filter @ai-workflow/workflow test:seed",
+         "build:watch": "turbo build:watch",
+         "build": "turbo build",
+         "dev": "turbo dev",
+         "docker:start": "docker compose -f docker/docker-compose.yml -p ai-workflow up -d",
+         "docker:top": "docker compose -f docker/docker-compose.yml -p ai-workflow down",
+         "clean": "run-s clean:build clean:caches",
+         "clean:build": "pnpm --filter @ai-workflow/* clean",
+         "clean:caches": " rimraf .turbo/cache **/*/.turbo",
+         "clean:deps": "rimraf node_modules **/*/node_modules",
+         "clean:all": "run-s clean:build clean:caches clean:deps",
+@@ -40,20 +46,21 @@
+         "*.{js,jsx}": [
+             "eslint --fix",
+             "prettier --cache --write"
+         ],
+         "*.{ts,tsx}": [
+             "eslint --fix",
+             "prettier --cache --parser=typescript --write"
+         ]
+     },
+     "devDependencies": {
++        "@playwright/test": "^1.51.1",
+         "@types/node": "22.9.0",
+         "eslint": "9.39.1",
+         "@eslint/js": "9.39.1",
+         "eslint-config-next": "16.0.5",
+         "typescript-eslint": "8.48.0",
+         "eslint-plugin-react-refresh": "0.4.24",
+         "eslint-plugin-react-hooks": "^7.0.1",
+         "globals": "16.5.0",
+         "typescript": "5.9.3",
+         "eslint-plugin-prettier": "5.5.4",
+diff --git a/pnpm-lock.yaml b/pnpm-lock.yaml
+index 50f1ad6..f99bca3 100644
+--- a/pnpm-lock.yaml
++++ b/pnpm-lock.yaml
+@@ -10,20 +10,23 @@ importers:
+     devDependencies:
+       '@commitlint/cli':
+         specifier: 20.1.0
+         version: 20.1.0(@types/node@22.9.0)(typescript@5.9.3)
+       '@commitlint/config-conventional':
+         specifier: 20.0.0
+         version: 20.0.0
+       '@eslint/js':
+         specifier: 9.39.1
+         version: 9.39.1
++      '@playwright/test':
++        specifier: ^1.51.1
++        version: 1.63.0
+       '@types/node':
+         specifier: 22.9.0
+         version: 22.9.0
+       commitizen:
+         specifier: 4.3.1
+         version: 4.3.1(@types/node@22.9.0)(typescript@5.9.3)
+       cspell:
+         specifier: 9.3.2
+         version: 9.3.2
+       cz-git:
+@@ -160,21 +163,21 @@ importers:
+         specifier: ^7.2.0
+         version: 7.2.0(prisma@7.2.0(@types/react@19.2.7)(react-dom@19.2.0(react@19.2.0))(react@19.2.0)(typescript@5.9.3))(typescript@5.9.3)
+       clsx:
+         specifier: ^2.1.1
+         version: 2.1.1
+       lucide-react:
+         specifier: ^0.555.0
+         version: 0.555.0(react@19.2.0)
+       next:
+         specifier: 16.1.1
+-        version: 16.1.1(@babel/core@7.26.0)(react-dom@19.2.0(react@19.2.0))(react@19.2.0)
++        version: 16.1.1(@babel/core@7.26.0)(@playwright/test@1.63.0)(react-dom@19.2.0(react@19.2.0))(react@19.2.0)
+       pg:
+         specifier: ^8.16.3
+         version: 8.16.3
+       prisma:
+         specifier: ^7.2.0
+         version: 7.2.0(@types/react@19.2.7)(react-dom@19.2.0(react@19.2.0))(react@19.2.0)(typescript@5.9.3)
+       react:
+         specifier: 19.2.0
+         version: 19.2.0
+       react-dom:
+@@ -341,21 +344,21 @@ importers:
+         specifier: ^4.7.8
+         version: 4.7.8
+       jsonwebtoken:
+         specifier: ^9.0.3
+         version: 9.0.3
+       lucide-react:
+         specifier: ^0.555.0
+         version: 0.555.0(react@19.2.0)
+       next:
+         specifier: 16.1.1
+-        version: 16.1.1(@babel/core@7.26.0)(react-dom@19.2.0(react@19.2.0))(react@19.2.0)
++        version: 16.1.1(@babel/core@7.26.0)(@playwright/test@1.63.0)(react-dom@19.2.0(react@19.2.0))(react@19.2.0)
+       next-themes:
+         specifier: ^0.4.6
+         version: 0.4.6(react-dom@19.2.0(react@19.2.0))(react@19.2.0)
+       nodemailer:
+         specifier: ^7.0.12
+         version: 7.0.12
+       pg:
+         specifier: ^8.16.3
+         version: 8.16.3
+       prisma:
+@@ -415,20 +418,23 @@ importers:
+         version: 2.9.11
+       dotenv:
+         specifier: ^16.4.5
+         version: 16.6.1
+       postcss:
+         specifier: ^8.5.6
+         version: 8.5.6
+       tailwindcss:
+         specifier: 4.1.18
+         version: 4.1.18
++      tsx:
++        specifier: ^4.8.1
++        version: 4.21.0
+       tw-animate-css:
+         specifier: ^1.4.0
+         version: 1.4.0
+ 
+   packages/ai-engine:
+     dependencies:
+       '@langchain/core':
+         specifier: ^1.0.3
+         version: 1.1.7
+       '@langchain/langgraph':
+@@ -1485,103 +1491,119 @@ packages:
+ 
+   '@img/sharp-libvips-darwin-x64@1.2.4':
+     resolution: {integrity: sha512-1IOd5xfVhlGwX+zXv2N93k0yMONvUlANylbJw1eTah8K/Jtpi15KC+WSiaX/nBmbm2HxRM1gZ0nSdjSsrZbGKg==}
+     cpu: [x64]
+     os: [darwin]
+ 
+   '@img/sharp-libvips-linux-arm64@1.2.4':
+     resolution: {integrity: sha512-excjX8DfsIcJ10x1Kzr4RcWe1edC9PquDRRPx3YVCvQv+U5p7Yin2s32ftzikXojb1PIFc/9Mt28/y+iRklkrw==}
+     cpu: [arm64]
+     os: [linux]
++    libc: [glibc]
+ 
+   '@img/sharp-libvips-linux-arm@1.2.4':
+     resolution: {integrity: sha512-bFI7xcKFELdiNCVov8e44Ia4u2byA+l3XtsAj+Q8tfCwO6BQ8iDojYdvoPMqsKDkuoOo+X6HZA0s0q11ANMQ8A==}
+     cpu: [arm]
+     os: [linux]
++    libc: [glibc]
+ 
+   '@img/sharp-libvips-linux-ppc64@1.2.4':
+     resolution: {integrity: sha512-FMuvGijLDYG6lW+b/UvyilUWu5Ayu+3r2d1S8notiGCIyYU/76eig1UfMmkZ7vwgOrzKzlQbFSuQfgm7GYUPpA==}
+     cpu: [ppc64]
+     os: [linux]
++    libc: [glibc]
+ 
+   '@img/sharp-libvips-linux-riscv64@1.2.4':
+     resolution: {integrity: sha512-oVDbcR4zUC0ce82teubSm+x6ETixtKZBh/qbREIOcI3cULzDyb18Sr/Wcyx7NRQeQzOiHTNbZFF1UwPS2scyGA==}
+     cpu: [riscv64]
+     os: [linux]
++    libc: [glibc]
+ 
+   '@img/sharp-libvips-linux-s390x@1.2.4':
+     resolution: {integrity: sha512-qmp9VrzgPgMoGZyPvrQHqk02uyjA0/QrTO26Tqk6l4ZV0MPWIW6LTkqOIov+J1yEu7MbFQaDpwdwJKhbJvuRxQ==}
+     cpu: [s390x]
+     os: [linux]
++    libc: [glibc]
+ 
+   '@img/sharp-libvips-linux-x64@1.2.4':
+     resolution: {integrity: sha512-tJxiiLsmHc9Ax1bz3oaOYBURTXGIRDODBqhveVHonrHJ9/+k89qbLl0bcJns+e4t4rvaNBxaEZsFtSfAdquPrw==}
+     cpu: [x64]
+     os: [linux]
++    libc: [glibc]
+ 
+   '@img/sharp-libvips-linuxmusl-arm64@1.2.4':
+     resolution: {integrity: sha512-FVQHuwx1IIuNow9QAbYUzJ+En8KcVm9Lk5+uGUQJHaZmMECZmOlix9HnH7n1TRkXMS0pGxIJokIVB9SuqZGGXw==}
+     cpu: [arm64]
+     os: [linux]
++    libc: [musl]
+ 
+   '@img/sharp-libvips-linuxmusl-x64@1.2.4':
+     resolution: {integrity: sha512-+LpyBk7L44ZIXwz/VYfglaX/okxezESc6UxDSoyo2Ks6Jxc4Y7sGjpgU9s4PMgqgjj1gZCylTieNamqA1MF7Dg==}
+     cpu: [x64]
+     os: [linux]
++    libc: [musl]
+ 
+   '@img/sharp-linux-arm64@0.34.5':
+     resolution: {integrity: sha512-bKQzaJRY/bkPOXyKx5EVup7qkaojECG6NLYswgktOZjaXecSAeCWiZwwiFf3/Y+O1HrauiE3FVsGxFg8c24rZg==}
+     engines: {node: ^18.17.0 || ^20.3.0 || >=21.0.0}
+     cpu: [arm64]
+     os: [linux]
++    libc: [glibc]
+ 
+   '@img/sharp-linux-arm@0.34.5':
+     resolution: {integrity: sha512-9dLqsvwtg1uuXBGZKsxem9595+ujv0sJ6Vi8wcTANSFpwV/GONat5eCkzQo/1O6zRIkh0m/8+5BjrRr7jDUSZw==}
+     engines: {node: ^18.17.0 || ^20.3.0 || >=21.0.0}
+     cpu: [arm]
+     os: [linux]
++    libc: [glibc]
+ 
+   '@img/sharp-linux-ppc64@0.34.5':
+     resolution: {integrity: sha512-7zznwNaqW6YtsfrGGDA6BRkISKAAE1Jo0QdpNYXNMHu2+0dTrPflTLNkpc8l7MUP5M16ZJcUvysVWWrMefZquA==}
+     engines: {node: ^18.17.0 || ^20.3.0 || >=21.0.0}
+     cpu: [ppc64]
+     os: [linux]
++    libc: [glibc]
+ 
+   '@img/sharp-linux-riscv64@0.34.5':
+     resolution: {integrity: sha512-51gJuLPTKa7piYPaVs8GmByo7/U7/7TZOq+cnXJIHZKavIRHAP77e3N2HEl3dgiqdD/w0yUfiJnII77PuDDFdw==}
+     engines: {node: ^18.17.0 || ^20.3.0 || >=21.0.0}
+     cpu: [riscv64]
+     os: [linux]
++    libc: [glibc]
+ 
+   '@img/sharp-linux-s390x@0.34.5':
+     resolution: {integrity: sha512-nQtCk0PdKfho3eC5MrbQoigJ2gd1CgddUMkabUj+rBevs8tZ2cULOx46E7oyX+04WGfABgIwmMC0VqieTiR4jg==}
+     engines: {node: ^18.17.0 || ^20.3.0 || >=21.0.0}
+     cpu: [s390x]
+     os: [linux]
++    libc: [glibc]
+ 
+   '@img/sharp-linux-x64@0.34.5':
+     resolution: {integrity: sha512-MEzd8HPKxVxVenwAa+JRPwEC7QFjoPWuS5NZnBt6B3pu7EG2Ge0id1oLHZpPJdn3OQK+BQDiw9zStiHBTJQQQQ==}
+     engines: {node: ^18.17.0 || ^20.3.0 || >=21.0.0}
+     cpu: [x64]
+     os: [linux]
++    libc: [glibc]
+ 
+   '@img/sharp-linuxmusl-arm64@0.34.5':
+     resolution: {integrity: sha512-fprJR6GtRsMt6Kyfq44IsChVZeGN97gTD331weR1ex1c1rypDEABN6Tm2xa1wE6lYb5DdEnk03NZPqA7Id21yg==}
+     engines: {node: ^18.17.0 || ^20.3.0 || >=21.0.0}
+     cpu: [arm64]
+     os: [linux]
++    libc: [musl]
+ 
+   '@img/sharp-linuxmusl-x64@0.34.5':
+     resolution: {integrity: sha512-Jg8wNT1MUzIvhBFxViqrEhWDGzqymo3sV7z7ZsaWbZNDLXRJZoRGrjulp60YYtV4wfY8VIKcWidjojlLcWrd8Q==}
+     engines: {node: ^18.17.0 || ^20.3.0 || >=21.0.0}
+     cpu: [x64]
+     os: [linux]
++    libc: [musl]
+ 
+   '@img/sharp-wasm32@0.34.5':
+     resolution: {integrity: sha512-OdWTEiVkY2PHwqkbBI8frFxQQFekHaSSkUIJkwzclWZe64O1X4UlUjqqqLaPbUpMOQk6FBu/HtlGXNblIs0huw==}
+     engines: {node: ^18.17.0 || ^20.3.0 || >=21.0.0}
+     cpu: [wasm32]
+ 
+   '@img/sharp-win32-arm64@0.34.5':
+     resolution: {integrity: sha512-WQ3AgWCWYSb2yt+IG8mnC6Jdk9Whs7O0gxphblsLvdhSpSTtmu69ZG1Gkb6NuvxsNACwiPV6cNSZNzt0KPsw7g==}
+     engines: {node: ^18.17.0 || ^20.3.0 || >=21.0.0}
+     cpu: [arm64]
+@@ -1920,38 +1942,42 @@ packages:
+     resolution: {integrity: sha512-hbyKtrDGUkgkyQi1m1IyD3q4I/3m9ngr+V93z4oKHrPcmxwNL5iMWORvLSGAf2YujL+6HxgVvZuCYZfLfb4bGw==}
+     engines: {node: '>= 10'}
+     cpu: [x64]
+     os: [darwin]
+ 
+   '@next/swc-linux-arm64-gnu@16.1.1':
+     resolution: {integrity: sha512-/fvHet+EYckFvRLQ0jPHJCUI5/B56+2DpI1xDSvi80r/3Ez+Eaa2Yq4tJcRTaB1kqj/HrYKn8Yplm9bNoMJpwQ==}
+     engines: {node: '>= 10'}
+     cpu: [arm64]
+     os: [linux]
++    libc: [glibc]
+ 
+   '@next/swc-linux-arm64-musl@16.1.1':
+     resolution: {integrity: sha512-MFHrgL4TXNQbBPzkKKur4Fb5ICEJa87HM7fczFs2+HWblM7mMLdco3dvyTI+QmLBU9xgns/EeeINSZD6Ar+oLg==}
+     engines: {node: '>= 10'}
+     cpu: [arm64]
+     os: [linux]
++    libc: [musl]
+ 
+   '@next/swc-linux-x64-gnu@16.1.1':
+     resolution: {integrity: sha512-20bYDfgOQAPUkkKBnyP9PTuHiJGM7HzNBbuqmD0jiFVZ0aOldz+VnJhbxzjcSabYsnNjMPsE0cyzEudpYxsrUQ==}
+     engines: {node: '>= 10'}
+     cpu: [x64]
+     os: [linux]
++    libc: [glibc]
+ 
+   '@next/swc-linux-x64-musl@16.1.1':
+     resolution: {integrity: sha512-9pRbK3M4asAHQRkwaXwu601oPZHghuSC8IXNENgbBSyImHv/zY4K5udBusgdHkvJ/Tcr96jJwQYOll0qU8+fPA==}
+     engines: {node: '>= 10'}
+     cpu: [x64]
+     os: [linux]
++    libc: [musl]
+ 
+   '@next/swc-win32-arm64-msvc@16.1.1':
+     resolution: {integrity: sha512-bdfQkggaLgnmYrFkSQfsHfOhk/mCYmjnrbRCGgkMcoOBZ4n+TRRSLmT/CU5SATzlBJ9TpioUyBW/vWFXTqQRiA==}
+     engines: {node: '>= 10'}
+     cpu: [arm64]
+     os: [win32]
+ 
+   '@next/swc-win32-x64-msvc@16.1.1':
+     resolution: {integrity: sha512-Ncwbw2WJ57Al5OX0k4chM68DKhEPlrXBaSXDCi2kPi5f4d8b3ejr3RRJGfKBLrn2YJL5ezNS7w2TZLHSti8CMw==}
+     engines: {node: '>= 10'}
+@@ -1980,20 +2006,25 @@ packages:
+     hasBin: true
+ 
+   '@pkgjs/parseargs@0.11.0':
+     resolution: {integrity: sha512-+1VkjdD0QBLPodGrJUeqarH8VAIvQODIbwh9XpP5Syisf7YoQgsJKPNFoqqLQlu+VQ/tVSshMR6loPMn8U+dPg==}
+     engines: {node: '>=14'}
+ 
+   '@pkgr/core@0.2.9':
+     resolution: {integrity: sha512-QNqXyfVS2wm9hweSYD2O7F0G06uurj9kZ96TRQE5Y9hU7+tgdZwIkbAKc5Ocy1HxEY2kuDQa6cQ1WRs/O5LFKA==}
+     engines: {node: ^12.20.0 || ^14.18.0 || >=16.0.0}
+ 
++  '@playwright/test@1.63.0':
++    resolution: {integrity: sha512-oxMK4vllB9RK5NQ2l1pq1IfOf2AvnEuj/vYGDj0H2nMtmtZpKtCwt/l00GEO6xjGfpBNAvjovvYdCm50dRQkpQ==}
++    engines: {node: '>=20'}
++    hasBin: true
++
+   '@prisma/adapter-pg@7.2.0':
+     resolution: {integrity: sha512-euIdQ13cRB2wZ3jPsnDnFhINquo1PYFPCg6yVL8b2rp3EdinQHsX9EDdCtRr489D5uhphcRk463OdQAFlsCr0w==}
+ 
+   '@prisma/client-runtime-utils@7.2.0':
+     resolution: {integrity: sha512-dn7oB53v0tqkB0wBdMuTNFNPdEbfICEUe82Tn9FoKAhJCUkDH+fmyEp0ClciGh+9Hp2Tuu2K52kth2MTLstvmA==}
+ 
+   '@prisma/client@7.2.0':
+     resolution: {integrity: sha512-JdLF8lWZ+LjKGKpBqyAlenxd/kXjd1Abf/xK+6vUA7R7L2Suo6AFTHFRpPSdAKCan9wzdFApsUpSa/F6+t1AtA==}
+     engines: {node: ^20.19 || ^22.12 || >=24.0}
+     peerDependencies:
+@@ -2637,70 +2668,81 @@ packages:
+ 
+   '@rollup/rollup-freebsd-x64@4.53.3':
+     resolution: {integrity: sha512-lMfF8X7QhdQzseM6XaX0vbno2m3hlyZFhwcndRMw8fbAGUGL3WFMBdK0hbUBIUYcEcMhVLr1SIamDeuLBnXS+Q==}
+     cpu: [x64]
+     os: [freebsd]
+ 
+   '@rollup/rollup-linux-arm-gnueabihf@4.53.3':
+     resolution: {integrity: sha512-k9oD15soC/Ln6d2Wv/JOFPzZXIAIFLp6B+i14KhxAfnq76ajt0EhYc5YPeX6W1xJkAdItcVT+JhKl1QZh44/qw==}
+     cpu: [arm]
+     os: [linux]
++    libc: [glibc]
+ 
+   '@rollup/rollup-linux-arm-musleabihf@4.53.3':
+     resolution: {integrity: sha512-vTNlKq+N6CK/8UktsrFuc+/7NlEYVxgaEgRXVUVK258Z5ymho29skzW1sutgYjqNnquGwVUObAaxae8rZ6YMhg==}
+     cpu: [arm]
+     os: [linux]
++    libc: [musl]
+ 
+   '@rollup/rollup-linux-arm64-gnu@4.53.3':
+     resolution: {integrity: sha512-RGrFLWgMhSxRs/EWJMIFM1O5Mzuz3Xy3/mnxJp/5cVhZ2XoCAxJnmNsEyeMJtpK+wu0FJFWz+QF4mjCA7AUQ3w==}
+     cpu: [arm64]
+     os: [linux]
++    libc: [glibc]
+ 
+   '@rollup/rollup-linux-arm64-musl@4.53.3':
+     resolution: {integrity: sha512-kASyvfBEWYPEwe0Qv4nfu6pNkITLTb32p4yTgzFCocHnJLAHs+9LjUu9ONIhvfT/5lv4YS5muBHyuV84epBo/A==}
+     cpu: [arm64]
+     os: [linux]
++    libc: [musl]
+ 
+   '@rollup/rollup-linux-loong64-gnu@4.53.3':
+     resolution: {integrity: sha512-JiuKcp2teLJwQ7vkJ95EwESWkNRFJD7TQgYmCnrPtlu50b4XvT5MOmurWNrCj3IFdyjBQ5p9vnrX4JM6I8OE7g==}
+     cpu: [loong64]
+     os: [linux]
++    libc: [glibc]
+ 
+   '@rollup/rollup-linux-ppc64-gnu@4.53.3':
+     resolution: {integrity: sha512-EoGSa8nd6d3T7zLuqdojxC20oBfNT8nexBbB/rkxgKj5T5vhpAQKKnD+h3UkoMuTyXkP5jTjK/ccNRmQrPNDuw==}
+     cpu: [ppc64]
+     os: [linux]
++    libc: [glibc]
+ 
+   '@rollup/rollup-linux-riscv64-gnu@4.53.3':
+     resolution: {integrity: sha512-4s+Wped2IHXHPnAEbIB0YWBv7SDohqxobiiPA1FIWZpX+w9o2i4LezzH/NkFUl8LRci/8udci6cLq+jJQlh+0g==}
+     cpu: [riscv64]
+     os: [linux]
++    libc: [glibc]
+ 
+   '@rollup/rollup-linux-riscv64-musl@4.53.3':
+     resolution: {integrity: sha512-68k2g7+0vs2u9CxDt5ktXTngsxOQkSEV/xBbwlqYcUrAVh6P9EgMZvFsnHy4SEiUl46Xf0IObWVbMvPrr2gw8A==}
+     cpu: [riscv64]
+     os: [linux]
++    libc: [musl]
+ 
+   '@rollup/rollup-linux-s390x-gnu@4.53.3':
+     resolution: {integrity: sha512-VYsFMpULAz87ZW6BVYw3I6sWesGpsP9OPcyKe8ofdg9LHxSbRMd7zrVrr5xi/3kMZtpWL/wC+UIJWJYVX5uTKg==}
+     cpu: [s390x]
+     os: [linux]
++    libc: [glibc]
+ 
+   '@rollup/rollup-linux-x64-gnu@4.53.3':
+     resolution: {integrity: sha512-3EhFi1FU6YL8HTUJZ51imGJWEX//ajQPfqWLI3BQq4TlvHy4X0MOr5q3D2Zof/ka0d5FNdPwZXm3Yyib/UEd+w==}
+     cpu: [x64]
+     os: [linux]
++    libc: [glibc]
+ 
+   '@rollup/rollup-linux-x64-musl@4.53.3':
+     resolution: {integrity: sha512-eoROhjcc6HbZCJr+tvVT8X4fW3/5g/WkGvvmwz/88sDtSJzO7r/blvoBDgISDiCjDRZmHpwud7h+6Q9JxFwq1Q==}
+     cpu: [x64]
+     os: [linux]
++    libc: [musl]
+ 
+   '@rollup/rollup-openharmony-arm64@4.53.3':
+     resolution: {integrity: sha512-OueLAWgrNSPGAdUdIjSWXw+u/02BRTcnfw9PN41D2vq/JSEPnJnVuBgw18VkN8wcd4fjUs+jFHVM4t9+kBSNLw==}
+     cpu: [arm64]
+     os: [openharmony]
+ 
+   '@rollup/rollup-win32-arm64-msvc@4.53.3':
+     resolution: {integrity: sha512-GOFuKpsxR/whszbF/bzydebLiXIHSgsEUp6M0JI8dWvi+fFa1TD6YQa4aSZHtpmh2/uAlj/Dy+nmby3TJ3pkTw==}
+     cpu: [arm64]
+     os: [win32]
+@@ -2943,38 +2985,42 @@ packages:
+     resolution: {integrity: sha512-k7jWk5E3ldAdw0cNglhjSgv501u7yrMf8oeZ0cElhxU6Y2o7f8yqelOp3fhf7evjIS6ujTI3U8pKUXV2I4iXHQ==}
+     engines: {node: '>= 10'}
+     cpu: [arm]
+     os: [linux]
+ 
+   '@tailwindcss/oxide-linux-arm64-gnu@4.1.17':
+     resolution: {integrity: sha512-HVDOm/mxK6+TbARwdW17WrgDYEGzmoYayrCgmLEw7FxTPLcp/glBisuyWkFz/jb7ZfiAXAXUACfyItn+nTgsdQ==}
+     engines: {node: '>= 10'}
+     cpu: [arm64]
+     os: [linux]
++    libc: [glibc]
+ 
+   '@tailwindcss/oxide-linux-arm64-musl@4.1.17':
+     resolution: {integrity: sha512-HvZLfGr42i5anKtIeQzxdkw/wPqIbpeZqe7vd3V9vI3RQxe3xU1fLjss0TjyhxWcBaipk7NYwSrwTwK1hJARMg==}
+     engines: {node: '>= 10'}
+     cpu: [arm64]
+     os: [linux]
++    libc: [musl]
+ 
+   '@tailwindcss/oxide-linux-x64-gnu@4.1.17':
+     resolution: {integrity: sha512-M3XZuORCGB7VPOEDH+nzpJ21XPvK5PyjlkSFkFziNHGLc5d6g3di2McAAblmaSUNl8IOmzYwLx9NsE7bplNkwQ==}
+     engines: {node: '>= 10'}
+     cpu: [x64]
+     os: [linux]
++    libc: [glibc]
+ 
+   '@tailwindcss/oxide-linux-x64-musl@4.1.17':
+     resolution: {integrity: sha512-k7f+pf9eXLEey4pBlw+8dgfJHY4PZ5qOUFDyNf7SI6lHjQ9Zt7+NcscjpwdCEbYi6FI5c2KDTDWyf2iHcCSyyQ==}
+     engines: {node: '>= 10'}
+     cpu: [x64]
+     os: [linux]
++    libc: [musl]
+ 
+   '@tailwindcss/oxide-wasm32-wasi@4.1.17':
+     resolution: {integrity: sha512-cEytGqSSoy7zK4JRWiTCx43FsKP/zGr0CsuMawhH67ONlH+T79VteQeJQRO/X7L0juEUA8ZyuYikcRBf0vsxhg==}
+     engines: {node: '>=14.0.0'}
+     cpu: [wasm32]
+     bundledDependencies:
+       - '@napi-rs/wasm-runtime'
+       - '@emnapi/core'
+       - '@emnapi/runtime'
+       - '@tybys/wasm-util'
+@@ -3422,55 +3468,63 @@ packages:
+ 
+   '@unrs/resolver-binding-linux-arm-musleabihf@1.11.1':
+     resolution: {integrity: sha512-cINaoY2z7LVCrfHkIcmvj7osTOtm6VVT16b5oQdS4beibX2SYBwgYLmqhBjA1t51CarSaBuX5YNsWLjsqfW5Cw==}
+     cpu: [arm]
+     os: [linux]
+ 
+   '@unrs/resolver-binding-linux-arm64-gnu@1.11.1':
+     resolution: {integrity: sha512-34gw7PjDGB9JgePJEmhEqBhWvCiiWCuXsL9hYphDF7crW7UgI05gyBAi6MF58uGcMOiOqSJ2ybEeCvHcq0BCmQ==}
+     cpu: [arm64]
+     os: [linux]
++    libc: [glibc]
+ 
+   '@unrs/resolver-binding-linux-arm64-musl@1.11.1':
+     resolution: {integrity: sha512-RyMIx6Uf53hhOtJDIamSbTskA99sPHS96wxVE/bJtePJJtpdKGXO1wY90oRdXuYOGOTuqjT8ACccMc4K6QmT3w==}
+     cpu: [arm64]
+     os: [linux]
++    libc: [musl]
+ 
+   '@unrs/resolver-binding-linux-ppc64-gnu@1.11.1':
+     resolution: {integrity: sha512-D8Vae74A4/a+mZH0FbOkFJL9DSK2R6TFPC9M+jCWYia/q2einCubX10pecpDiTmkJVUH+y8K3BZClycD8nCShA==}
+     cpu: [ppc64]
+     os: [linux]
++    libc: [glibc]
+ 
+   '@unrs/resolver-binding-linux-riscv64-gnu@1.11.1':
+     resolution: {integrity: sha512-frxL4OrzOWVVsOc96+V3aqTIQl1O2TjgExV4EKgRY09AJ9leZpEg8Ak9phadbuX0BA4k8U5qtvMSQQGGmaJqcQ==}
+     cpu: [riscv64]
+     os: [linux]
++    libc: [glibc]
+ 
+   '@unrs/resolver-binding-linux-riscv64-musl@1.11.1':
+     resolution: {integrity: sha512-mJ5vuDaIZ+l/acv01sHoXfpnyrNKOk/3aDoEdLO/Xtn9HuZlDD6jKxHlkN8ZhWyLJsRBxfv9GYM2utQ1SChKew==}
+     cpu: [riscv64]
+     os: [linux]
++    libc: [musl]
+ 
+   '@unrs/resolver-binding-linux-s390x-gnu@1.11.1':
+     resolution: {integrity: sha512-kELo8ebBVtb9sA7rMe1Cph4QHreByhaZ2QEADd9NzIQsYNQpt9UkM9iqr2lhGr5afh885d/cB5QeTXSbZHTYPg==}
+     cpu: [s390x]
+     os: [linux]
++    libc: [glibc]
+ 
+   '@unrs/resolver-binding-linux-x64-gnu@1.11.1':
+     resolution: {integrity: sha512-C3ZAHugKgovV5YvAMsxhq0gtXuwESUKc5MhEtjBpLoHPLYM+iuwSj3lflFwK3DPm68660rZ7G8BMcwSro7hD5w==}
+     cpu: [x64]
+     os: [linux]
++    libc: [glibc]
+ 
+   '@unrs/resolver-binding-linux-x64-musl@1.11.1':
+     resolution: {integrity: sha512-rV0YSoyhK2nZ4vEswT/QwqzqQXw5I6CjoaYMOX0TqBlWhojUf8P94mvI7nuJTeaCkkds3QE4+zS8Ko+GdXuZtA==}
+     cpu: [x64]
+     os: [linux]
++    libc: [musl]
+ 
+   '@unrs/resolver-binding-wasm32-wasi@1.11.1':
+     resolution: {integrity: sha512-5u4RkfxJm+Ng7IWgkzi3qrFOvLvQYnPBmjmZQ8+szTK/b31fQCnleNl1GgEt7nIsZRIf5PLhPwT0WM+q45x/UQ==}
+     engines: {node: '>=14.0.0'}
+     cpu: [wasm32]
+ 
+   '@unrs/resolver-binding-win32-arm64-msvc@1.11.1':
+     resolution: {integrity: sha512-nRcz5Il4ln0kMhfL8S3hLkxI85BXs3o8EYoattsJNdsX4YUU89iOkVn7g0VHSRxFuVMdM4Q1jEpIId1Ihim/Uw==}
+     cpu: [arm64]
+     os: [win32]
+@@ -5375,38 +5429,42 @@ packages:
+     resolution: {integrity: sha512-eVdpxh4wYcm0PofJIZVuYuLiqBIakQ9uFZmipf6LF/HRj5Bgm0eb3qL/mr1smyXIS1twwOxNWndd8z0E374hiA==}
+     engines: {node: '>= 12.0.0'}
+     cpu: [arm]
+     os: [linux]
+ 
+   lightningcss-linux-arm64-gnu@1.30.2:
+     resolution: {integrity: sha512-UK65WJAbwIJbiBFXpxrbTNArtfuznvxAJw4Q2ZGlU8kPeDIWEX1dg3rn2veBVUylA2Ezg89ktszWbaQnxD/e3A==}
+     engines: {node: '>= 12.0.0'}
+     cpu: [arm64]
+     os: [linux]
++    libc: [glibc]
+ 
+   lightningcss-linux-arm64-musl@1.30.2:
+     resolution: {integrity: sha512-5Vh9dGeblpTxWHpOx8iauV02popZDsCYMPIgiuw97OJ5uaDsL86cnqSFs5LZkG3ghHoX5isLgWzMs+eD1YzrnA==}
+     engines: {node: '>= 12.0.0'}
+     cpu: [arm64]
+     os: [linux]
++    libc: [musl]
+ 
+   lightningcss-linux-x64-gnu@1.30.2:
+     resolution: {integrity: sha512-Cfd46gdmj1vQ+lR6VRTTadNHu6ALuw2pKR9lYq4FnhvgBc4zWY1EtZcAc6EffShbb1MFrIPfLDXD6Xprbnni4w==}
+     engines: {node: '>= 12.0.0'}
+     cpu: [x64]
+     os: [linux]
++    libc: [glibc]
+ 
+   lightningcss-linux-x64-musl@1.30.2:
+     resolution: {integrity: sha512-XJaLUUFXb6/QG2lGIW6aIk6jKdtjtcffUT0NKvIqhSBY3hh9Ch+1LCeH80dR9q9LBjG3ewbDjnumefsLsP6aiA==}
+     engines: {node: '>= 12.0.0'}
+     cpu: [x64]
+     os: [linux]
++    libc: [musl]
+ 
+   lightningcss-win32-arm64-msvc@1.30.2:
+     resolution: {integrity: sha512-FZn+vaj7zLv//D/192WFFVA0RgHawIcHqLX9xuWiQt7P0PtdFEVaxgF9rjM/IRYHQXNnk61/H/gb2Ei+kUQ4xQ==}
+     engines: {node: '>= 12.0.0'}
+     cpu: [arm64]
+     os: [win32]
+ 
+   lightningcss-win32-x64-msvc@1.30.2:
+     resolution: {integrity: sha512-5g1yc73p+iAkid5phb4oVFMB45417DkRevRbt/El/gKXJk4jid+vPFF/AXbxn05Aky8PapwzZrdJShv5C0avjw==}
+     engines: {node: '>= 12.0.0'}
+@@ -5996,20 +6054,30 @@ packages:
+     engines: {node: '>=0.10'}
+     hasBin: true
+ 
+   pirates@4.0.6:
+     resolution: {integrity: sha512-saLsH7WeYYPiD25LDuLRRY/i+6HaPYr6G1OUlN39otzkSTxKnubR9RTxS3/Kk50s1g2JTgFwWQDQyplC5/SHZg==}
+     engines: {node: '>= 6'}
+ 
+   pkg-types@2.3.0:
+     resolution: {integrity: sha512-SIqCzDRg0s9npO5XQ3tNZioRY1uK06lA41ynBC1YmFTmnY6FjUjVt6s4LoADmwoig1qqD0oK8h1p/8mlMx8Oig==}
+ 
++  playwright-core@1.63.0:
++    resolution: {integrity: sha512-rYCsBF/M5HjUch52bbtVONEFjv6Xu8sm8h72dNlR5bzIE1fvC/bxgspzkjSfU+MweEMmPM8KJebG6nnyxo5mCg==}
++    engines: {node: '>=20'}
++    hasBin: true
++
++  playwright@1.63.0:
++    resolution: {integrity: sha512-+7ziBLidS4NaNCdt57SUDT+wYmmd5fmiQejUic/kb+YsYSCPyOOE9sebzMjNmQrsnNpDJqd4WHvV/8lfKfUDUg==}
++    engines: {node: '>=20'}
++    hasBin: true
++
+   pluralize@8.0.0:
+     resolution: {integrity: sha512-Nc3IT5yHzflTfbjgqWcCPpo7DaKy4FnpB0l/zCAW0Tc7jxAiuqSxHasntB3D7887LSrA93kDJ9IXovxJYxyLCA==}
+     engines: {node: '>=4'}
+ 
+   possible-typed-array-names@1.1.0:
+     resolution: {integrity: sha512-/+5VFTchJDoVj3bhoqi6UeymcD00DAwb1nJwamzPvHEszJ4FpF6SNNbUbOS8yI56qHzdV8eK0qEfOSiodkTdxg==}
+     engines: {node: '>= 0.4'}
+ 
+   postcss-load-config@6.0.1:
+     resolution: {integrity: sha512-oPtTM4oerL+UXmx+93ytZVN82RrlY/wPUV8IeDxFrzIjXOLF1pN+EmKPLbubvKHT2HC20xXsCAH2Z+CKV6Oz/g==}
+@@ -8990,20 +9058,24 @@ snapshots:
+ 
+   '@nuxt/opencollective@0.4.1':
+     dependencies:
+       consola: 3.4.2
+ 
+   '@pkgjs/parseargs@0.11.0':
+     optional: true
+ 
+   '@pkgr/core@0.2.9': {}
+ 
++  '@playwright/test@1.63.0':
++    dependencies:
++      playwright: 1.63.0
++
+   '@prisma/adapter-pg@7.2.0':
+     dependencies:
+       '@prisma/driver-adapter-utils': 7.2.0
+       pg: 8.16.3
+       postgres-array: 3.0.4
+     transitivePeerDependencies:
+       - pg-native
+ 
+   '@prisma/client-runtime-utils@7.2.0': {}
+ 
+@@ -13091,39 +13163,40 @@ snapshots:
+ 
+   negotiator@1.0.0: {}
+ 
+   neo-async@2.6.2: {}
+ 
+   next-themes@0.4.6(react-dom@19.2.0(react@19.2.0))(react@19.2.0):
+     dependencies:
+       react: 19.2.0
+       react-dom: 19.2.0(react@19.2.0)
+ 
+-  next@16.1.1(@babel/core@7.26.0)(react-dom@19.2.0(react@19.2.0))(react@19.2.0):
++  next@16.1.1(@babel/core@7.26.0)(@playwright/test@1.63.0)(react-dom@19.2.0(react@19.2.0))(react@19.2.0):
+     dependencies:
+       '@next/env': 16.1.1
+       '@swc/helpers': 0.5.15
+       baseline-browser-mapping: 2.9.11
+       caniuse-lite: 1.0.30001761
+       postcss: 8.4.31
+       react: 19.2.0
+       react-dom: 19.2.0(react@19.2.0)
+       styled-jsx: 5.1.6(@babel/core@7.26.0)(react@19.2.0)
+     optionalDependencies:
+       '@next/swc-darwin-arm64': 16.1.1
+       '@next/swc-darwin-x64': 16.1.1
+       '@next/swc-linux-arm64-gnu': 16.1.1
+       '@next/swc-linux-arm64-musl': 16.1.1
+       '@next/swc-linux-x64-gnu': 16.1.1
+       '@next/swc-linux-x64-musl': 16.1.1
+       '@next/swc-win32-arm64-msvc': 16.1.1
+       '@next/swc-win32-x64-msvc': 16.1.1
++      '@playwright/test': 1.63.0
+       sharp: 0.34.5
+     transitivePeerDependencies:
+       - '@babel/core'
+       - babel-plugin-macros
+ 
+   node-abort-controller@3.1.1: {}
+ 
+   node-emoji@1.11.0:
+     dependencies:
+       lodash: 4.17.21
+@@ -13381,20 +13454,26 @@ snapshots:
+   pidtree@0.6.0: {}
+ 
+   pirates@4.0.6: {}
+ 
+   pkg-types@2.3.0:
+     dependencies:
+       confbox: 0.2.2
+       exsolve: 1.0.8
+       pathe: 2.0.3
+ 
++  playwright-core@1.63.0: {}
++
++  playwright@1.63.0:
++    dependencies:
++      playwright-core: 1.63.0
++
+   pluralize@8.0.0: {}
+ 
+   possible-typed-array-names@1.1.0: {}
+ 
+   postcss-load-config@6.0.1(jiti@2.6.1)(postcss@8.5.6)(tsx@4.21.0)(yaml@2.8.2):
+     dependencies:
+       lilconfig: 3.1.2
+     optionalDependencies:
+       jiti: 2.6.1
+       postcss: 8.5.6
+
+## Untracked file: playwright.config.ts
+diff --git a/playwright.config.ts b/playwright.config.ts
+new file mode 100644
+index 0000000..6e59ee8
+--- /dev/null
++++ b/playwright.config.ts
+@@ -0,0 +1,22 @@
++import { defineConfig, devices } from '@playwright/test'
++
++export default defineConfig({
++    testDir: './tests',
++    timeout: 30_000,
++    expect: { timeout: 5_000 },
++    fullyParallel: false,
++    workers: process.env.CI ? 1 : undefined,
++    reporter: process.env.CI ? [['line'], ['html', { open: 'never' }]] : 'list',
++    use: {
++        baseURL: process.env.WORKFLOW_BASE_URL ?? 'http://127.0.0.1:3000',
++        trace: 'retain-on-failure',
++        screenshot: 'only-on-failure',
++        video: 'retain-on-failure',
++        ignoreHTTPSErrors: true,
++    },
++    projects: [
++        { name: 'integration', testMatch: /tests\/integration\/.+\.spec\.ts/ },
++        { name: 'security', testMatch: /tests\/security\/.+\.spec\.ts/ },
++        { name: 'e2e', use: { ...devices['Desktop Chrome'] }, testMatch: /tests\/e2e\/.+\.spec\.ts/ },
++    ],
++})
+
+## Untracked file: tests/unit/test-command-contract.mjs
+diff --git a/tests/unit/test-command-contract.mjs b/tests/unit/test-command-contract.mjs
+new file mode 100644
+index 0000000..4d73b49
+--- /dev/null
++++ b/tests/unit/test-command-contract.mjs
+@@ -0,0 +1,19 @@
++import assert from 'node:assert/strict'
++import { readFile } from 'node:fs/promises'
++import test from 'node:test'
++
++async function readJson(path) {
++    return JSON.parse(await readFile(path, 'utf8'))
++}
++
++test('root exposes the OPT-018 test entry points', async () => {
++    const root = await readJson('package.json')
++    for (const name of ['test', 'test:integration', 'test:e2e', 'test:security', 'test:load']) {
++        assert.equal(typeof root.scripts[name], 'string', `${name} must be defined`)
++    }
++})
++
++test('workflow keeps a deterministic seed command', async () => {
++    const workflow = await readJson('apps/workflow/package.json')
++    assert.equal(typeof workflow.scripts['test:seed'], 'string')
++})

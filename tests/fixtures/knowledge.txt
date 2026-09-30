@@ -1,0 +1,2 @@
+OPT-018 deterministic knowledge phrase.
+This document verifies that the browser knowledge-base flow can upload, process, and retrieve a seeded phrase.

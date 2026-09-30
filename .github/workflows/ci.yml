@@ -1,0 +1,169 @@
+name: CI
+
+on:
+    push:
+    pull_request:
+
+permissions:
+    contents: read
+
+concurrency:
+    group: ci-${{ github.workflow }}-${{ github.ref }}
+    cancel-in-progress: true
+
+env:
+    NODE_ENV: test
+    DATABASE_URL: postgresql://ci:ci@127.0.0.1:5434/ai_workflow_test
+    TEST_DATABASE_URL: postgresql://ci:ci@127.0.0.1:5434/ai_workflow_test
+    JWT_SECRET: ci-e2e-jwt-secret
+    QDRANT_URL: http://127.0.0.1:6335
+    TEST_QDRANT_URL: http://127.0.0.1:6335
+    OLLAMA_BASE_URL: http://127.0.0.1:11434
+    TEST_OLLAMA_URL: http://127.0.0.1:11434
+    WORKFLOW_BASE_URL: http://127.0.0.1:3000
+    API_SERVER_BASE_URL: http://127.0.0.1:3101
+    NEXT_TELEMETRY_DISABLED: '1'
+
+jobs:
+    quality:
+        name: Quality
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v4
+            - uses: pnpm/action-setup@v4
+              with:
+                  version: 9.12.3
+            - uses: actions/setup-node@v4
+              with:
+                  node-version: 22
+                  cache: pnpm
+            - run: pnpm install --frozen-lockfile
+            - run: pnpm test
+            - run: pnpm exec playwright test --list
+            - run: pnpm spellcheck
+            - run: pnpm lint
+            - run: pnpm typecheck
+            - run: pnpm build
+
+    integration:
+        name: Integration
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v4
+            - uses: pnpm/action-setup@v4
+              with:
+                  version: 9.12.3
+            - uses: actions/setup-node@v4
+              with:
+                  node-version: 22
+                  cache: pnpm
+            - run: pnpm install --frozen-lockfile
+            - run: mkdir -p tests/.artifacts
+            - run: docker compose -f docker/docker-compose.test.yml up -d --wait
+            - run: pnpm --filter @ai-workflow/workflow exec prisma migrate deploy
+            - run: pnpm test:prepare
+            - run: |
+                  OLLAMA_PORT=11434 node tests/support/fake-ollama.mjs > tests/.artifacts/fake-ollama.log 2>&1 &
+                  DATABASE_URL="$DATABASE_URL" JWT_SECRET="$JWT_SECRET" QDRANT_URL="$QDRANT_URL" OLLAMA_BASE_URL="$OLLAMA_BASE_URL" PORT=3000 \
+                    pnpm --filter @ai-workflow/workflow exec next dev --hostname 127.0.0.1 --port 3000 > tests/.artifacts/workflow.log 2>&1 &
+                  DATABASE_URL="$DATABASE_URL" JWT_SECRET="$JWT_SECRET" QDRANT_URL="$QDRANT_URL" OLLAMA_BASE_URL="$OLLAMA_BASE_URL" PORT=3101 \
+                    pnpm --filter @ai-workflow/api-server start:dev > tests/.artifacts/api-server.log 2>&1 &
+                  DATABASE_URL="$DATABASE_URL" pnpm --filter @ai-workflow/webapp dev > tests/.artifacts/webapp.log 2>&1 &
+            - run: node tests/support/wait-for-services.mjs
+            - run: pnpm test:integration
+            - if: always()
+              run: |
+                  docker compose -f docker/docker-compose.test.yml logs --no-color > tests/.artifacts/test-compose.log || true
+            - if: always()
+              uses: actions/upload-artifact@v4
+              with:
+                  name: integration-diagnostics
+                  if-no-files-found: ignore
+                  path: |
+                      playwright-report
+                      test-results
+                      tests/.artifacts
+            - if: always()
+              run: docker compose -f docker/docker-compose.test.yml down -v
+
+    security:
+        name: Security regression
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v4
+            - uses: pnpm/action-setup@v4
+              with:
+                  version: 9.12.3
+            - uses: actions/setup-node@v4
+              with:
+                  node-version: 22
+                  cache: pnpm
+            - run: pnpm install --frozen-lockfile
+            - run: mkdir -p tests/.artifacts
+            - run: docker compose -f docker/docker-compose.test.yml up -d --wait
+            - run: pnpm --filter @ai-workflow/workflow exec prisma migrate deploy
+            - run: pnpm test:prepare
+            - run: |
+                  OLLAMA_PORT=11434 node tests/support/fake-ollama.mjs > tests/.artifacts/fake-ollama.log 2>&1 &
+                  DATABASE_URL="$DATABASE_URL" JWT_SECRET="$JWT_SECRET" QDRANT_URL="$QDRANT_URL" OLLAMA_BASE_URL="$OLLAMA_BASE_URL" PORT=3000 \
+                    pnpm --filter @ai-workflow/workflow exec next dev --hostname 127.0.0.1 --port 3000 > tests/.artifacts/workflow.log 2>&1 &
+                  DATABASE_URL="$DATABASE_URL" JWT_SECRET="$JWT_SECRET" QDRANT_URL="$QDRANT_URL" OLLAMA_BASE_URL="$OLLAMA_BASE_URL" PORT=3101 \
+                    pnpm --filter @ai-workflow/api-server start:dev > tests/.artifacts/api-server.log 2>&1 &
+                  DATABASE_URL="$DATABASE_URL" pnpm --filter @ai-workflow/webapp dev > tests/.artifacts/webapp.log 2>&1 &
+            - run: node tests/support/wait-for-services.mjs
+            - run: pnpm test:security
+            - if: always()
+              run: |
+                  docker compose -f docker/docker-compose.test.yml logs --no-color > tests/.artifacts/test-compose.log || true
+            - if: always()
+              uses: actions/upload-artifact@v4
+              with:
+                  name: security-diagnostics
+                  if-no-files-found: ignore
+                  path: |
+                      playwright-report
+                      test-results
+                      tests/.artifacts
+            - if: always()
+              run: docker compose -f docker/docker-compose.test.yml down -v
+
+    e2e:
+        name: Browser E2E
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v4
+            - uses: pnpm/action-setup@v4
+              with:
+                  version: 9.12.3
+            - uses: actions/setup-node@v4
+              with:
+                  node-version: 22
+                  cache: pnpm
+            - run: pnpm install --frozen-lockfile
+            - run: mkdir -p tests/.artifacts
+            - run: docker compose -f docker/docker-compose.test.yml up -d --wait
+            - run: pnpm --filter @ai-workflow/workflow exec prisma migrate deploy
+            - run: pnpm test:prepare
+            - run: |
+                  OLLAMA_PORT=11434 node tests/support/fake-ollama.mjs > tests/.artifacts/fake-ollama.log 2>&1 &
+                  DATABASE_URL="$DATABASE_URL" JWT_SECRET="$JWT_SECRET" QDRANT_URL="$QDRANT_URL" OLLAMA_BASE_URL="$OLLAMA_BASE_URL" PORT=3000 \
+                    pnpm --filter @ai-workflow/workflow exec next dev --hostname 127.0.0.1 --port 3000 > tests/.artifacts/workflow.log 2>&1 &
+                  DATABASE_URL="$DATABASE_URL" JWT_SECRET="$JWT_SECRET" QDRANT_URL="$QDRANT_URL" OLLAMA_BASE_URL="$OLLAMA_BASE_URL" PORT=3101 \
+                    pnpm --filter @ai-workflow/api-server start:dev > tests/.artifacts/api-server.log 2>&1 &
+                  DATABASE_URL="$DATABASE_URL" pnpm --filter @ai-workflow/webapp dev > tests/.artifacts/webapp.log 2>&1 &
+            - run: node tests/support/wait-for-services.mjs
+            - run: pnpm test:e2e
+            - if: always()
+              run: |
+                  docker compose -f docker/docker-compose.test.yml logs --no-color > tests/.artifacts/test-compose.log || true
+            - if: always()
+              uses: actions/upload-artifact@v4
+              with:
+                  name: e2e-diagnostics
+                  if-no-files-found: ignore
+                  path: |
+                      playwright-report
+                      test-results
+                      tests/.artifacts
+            - if: always()
+              run: docker compose -f docker/docker-compose.test.yml down -v

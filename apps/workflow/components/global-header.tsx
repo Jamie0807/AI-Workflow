@@ -130,7 +130,7 @@ export function GlobalHeader() {
 
                 <DropdownMenu>
                     <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="icon" className="rounded-full w-8 h-8">
+                        <Button variant="ghost" size="icon" className="rounded-full w-8 h-8" data-testid="user-menu-trigger">
                             <Avatar className="w-7 h-7">
                                 <AvatarImage src={user?.avatar || undefined} />
                                 <AvatarFallback className="bg-blue-600 text-white text-xs">{getUserInitial()}</AvatarFallback>
@@ -152,7 +152,9 @@ export function GlobalHeader() {
                             设置
                         </DropdownMenuItem>
                         <DropdownMenuSeparator />
-                        <DropdownMenuItem onClick={handleSignOut}>退出登录</DropdownMenuItem>
+                        <DropdownMenuItem onClick={handleSignOut} data-testid="logout-button">
+                            退出登录
+                        </DropdownMenuItem>
                     </DropdownMenuContent>
                 </DropdownMenu>
             </div>
