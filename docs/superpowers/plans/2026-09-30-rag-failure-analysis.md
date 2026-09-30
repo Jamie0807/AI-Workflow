@@ -37,7 +37,7 @@
 
 ---
 
-### Task 1: 定义纯分析接口并先写核心失败分类测试
+### Task 1: 定义单模式纯分析接口并先写核心失败分类测试
 
 **Files:**
 
@@ -48,7 +48,7 @@
 **Interfaces:**
 
 - Consumes: `EvaluationDataset`、三个 `EvaluationReport`、数据集 SHA-256 和分析上下文。
-- Produces: `analyzeRagFailure(input: FailureAnalysisInput): FailureAnalysisResult`、`validateFailureAnalysisInput(input): string[]`、`FailureAnalysisInputError` 以及可序列化的结果类型。
+- Produces: `analyzeModeFailure(dataset: EvaluationDataset, report: EvaluationReport): ModeFailureAnalysis`、单模式输入校验和可序列化的诊断类型。跨模式输入校验和最终 `analyzeRagFailure` 留给 Task 2，避免中间提交返回不完整的跨模式结果。
 
 - [ ] **Step 1: 写失败测试，锁定类型和三类覆盖分类**
 
@@ -57,7 +57,7 @@
 ```ts
 import { describe, expect, it } from 'vitest'
 
-import { analyzeRagFailure } from '../failure-analysis'
+import { analyzeModeFailure } from '../failure-analysis'
 import type { EvaluationDataset, EvaluationReport } from '../types'
 
 const dataset: EvaluationDataset = {
@@ -104,21 +104,11 @@ function report(mode: EvaluationReport['mode'], retrievedChunkIds: string[]): Ev
 }
 
 it('classifies coverage and preserves the relevance-level distinctions', () => {
-    const result = analyzeRagFailure({
-        dataset,
-        datasetSha256: 'dataset-sha',
-        datasetPath: 'dataset.jsonl',
-        reportPath: 'baseline.json',
-        gitRevision: 'abc123',
-        generatedAt: '2026-09-30T00:00:00.000Z',
-        reports: [
-            report('vector', ['core-3', 'core-2', 'background-1']),
-            report('fulltext', ['background-1', 'noise']),
-            report('hybrid', ['noise']),
-        ],
-    })
+    const vector = analyzeModeFailure(dataset, report('vector', ['core-3', 'core-2', 'background-1']))
+    const fulltext = analyzeModeFailure(dataset, report('fulltext', ['background-1', 'noise']))
+    const hybrid = analyzeModeFailure(dataset, report('hybrid', ['noise']))
 
-    expect(result.byMode.vector.queries[0]).toMatchObject({
+    expect(vector.queries[0]).toMatchObject({
         coverageStatus: 'complete',
         coveredRelevantChunkIds: ['core-3', 'core-2', 'background-1'],
         missedRelevantChunkIds: [],
@@ -127,7 +117,7 @@ it('classifies coverage and preserves the relevance-level distinctions', () => {
         backgroundOnly: false,
         maxRetrievedRelevance: 3,
     })
-    expect(result.byMode.fulltext.queries[0]).toMatchObject({
+    expect(fulltext.queries[0]).toMatchObject({
         coverageStatus: 'partial',
         coveredRelevantChunkIds: ['background-1'],
         missedRelevantChunkIds: ['core-3', 'core-2'],
@@ -136,7 +126,7 @@ it('classifies coverage and preserves the relevance-level distinctions', () => {
         backgroundOnly: true,
         maxRetrievedRelevance: 1,
     })
-    expect(result.byMode.hybrid.queries[0]).toMatchObject({
+    expect(hybrid.queries[0]).toMatchObject({
         coverageStatus: 'zero',
         coveredRelevantChunkIds: [],
         missedRelevantChunkIds: ['core-3', 'core-2', 'background-1'],
@@ -252,13 +242,13 @@ export interface FailureAnalysisResult {
     }>
 }
 
-export function validateFailureAnalysisInput(input: FailureAnalysisInput): string[]
-export function analyzeRagFailure(input: FailureAnalysisInput): FailureAnalysisResult
+export function validateModeFailureInput(dataset: EvaluationDataset, report: EvaluationReport): string[]
+export function analyzeModeFailure(dataset: EvaluationDataset, report: EvaluationReport): ModeFailureAnalysis
 ```
 
-`validateFailureAnalysisInput` 必须拒绝：缺少三种模式、重复模式、模式字段不匹配、数据集 SHA 不一致、查询集合不一致、`topK` 不一致、报告查询缺失/重复、报告查询与数据集 `sampleId` 不匹配、重复 retrieved chunk ID，以及数据集 sample 的相关 chunk ID 重复。错误字符串要包含模式、sample ID 或 chunk ID，方便 CLI 定位数据问题。
+`validateModeFailureInput` 必须拒绝模式字段不匹配、报告查询与数据集 `sampleId` 不匹配、报告查询重复、重复 retrieved chunk ID，以及数据集 sample 的相关 chunk ID 重复。错误字符串要包含模式、sample ID 或 chunk ID，方便后续跨模式校验定位数据问题。
 
-- [ ] **Step 4: 实现最小逐查询诊断并导出模块**
+- [ ] **Step 4: 实现单模式逐查询诊断、单模式汇总并导出模块**
 
 用 `Map` 建立 `sampleId -> EvaluationSample` 和 `chunkId -> relevance`，对每个模式按报告原始顺序输出集合，避免排序改变检索顺序。核心计算规则固定如下：
 
@@ -283,7 +273,7 @@ const backgroundOnly =
     })
 ```
 
-保留报告逐查询 `precisionAtK`、`recallAtK`、`mrrAtK`、`ndcgAtK` 和 `latencyMs`；不重新计算或覆盖正式指标。`retrievedResults` 只用于校验其 chunk ID 集合与 `retrievedChunkIds` 一致，不使用 score 推断失败原因。
+保留报告逐查询 `precisionAtK`、`recallAtK`、`mrrAtK`、`ndcgAtK` 和 `latencyMs`；不重新计算或覆盖正式指标。对单模式计算 `ModeFailureSummary` 的覆盖计数、误召回总数/平均值和最常遗漏 chunk。`retrievedResults` 只用于校验其 chunk ID 集合与 `retrievedChunkIds` 一致，不使用 score 推断失败原因。
 
 - [ ] **Step 5: 运行核心测试并提交**
 
@@ -303,7 +293,7 @@ git add packages/ai-engine/src/knowledge/evaluation/failure-analysis.ts \
 git commit -m "feat: add RAG failure analysis core"
 ```
 
-### Task 2: 完成三模式对比、汇总和排序的纯函数测试
+### Task 2: 组合三模式对比、跨模式校验和排序的纯函数测试
 
 **Files:**
 
@@ -312,8 +302,8 @@ git commit -m "feat: add RAG failure analysis core"
 
 **Interfaces:**
 
-- Consumes: Task 1 的 `QueryFailureAnalysis` 和三个 `ModeFailureAnalysis`。
-- Produces: `queryComparisons`、模式汇总、常被遗漏 chunk 和重点失败查询，全部包含在 `FailureAnalysisResult` 中。
+- Consumes: Task 1 的 `analyzeModeFailure`、`QueryFailureAnalysis` 和三个 `ModeFailureAnalysis`。
+- Produces: `validateFailureAnalysisInput(input): string[]`、`analyzeRagFailure(input: FailureAnalysisInput): FailureAnalysisResult`、`queryComparisons`、跨模式常被遗漏 chunk 对比和重点失败查询。
 
 - [ ] **Step 1: 写失败测试，覆盖模式对比和汇总排序**
 
@@ -365,14 +355,15 @@ pnpm --filter @ai-workflow/ai-engine test -- failure-analysis.test.ts
 
 Expected: FAIL because mode comparison, unique hit/miss sets, summary counts and priority ordering are not implemented.
 
-- [ ] **Step 3: 实现模式对比和汇总**
+- [ ] **Step 3: 实现跨模式输入校验、最终组合和模式对比**
 
 实现下列确定性规则：
 
-1. 每个模式的 `summary` 统计查询数、三种覆盖状态、background-only 数、所有查询的误召回总数和平均值；平均值使用 `falsePositiveCount / queryCount`，保留完整浮点值，展示层统一四舍五入。
-2. 用 `Map<string, number>` 聚合 `missedRelevantChunkIds`，按 `missedCount` 降序、`chunkId` 升序输出 `mostMissedRelevantChunks`。
-3. 对每个 sample 生成三个模式的诊断快照。`uniqueCoveredRelevantChunkIds` 是该模式命中但其他两个模式都未命中的相关 ID；`uniqueMissedRelevantChunkIds` 是该模式遗漏且至少一个其他模式命中的相关 ID；两个数组均按数据集 `relevantChunks` 原始顺序输出。
-4. 推荐关注模式只比较正式逐查询指标，不把 latency 或失败分类偷偷混入评分：
+1. `validateFailureAnalysisInput` 拒绝缺少三种模式、重复模式、数据集 SHA 不一致、查询 ID 集合不一致、每个模式的 `topK` 不一致，以及 Task 1 单模式校验发现的查询/chunk 错误。
+2. 调用 Task 1 的 `analyzeModeFailure` 生成三个模式的完整单模式诊断；保留各模式 summary 和原始指标。
+3. 用 `Map<string, number>` 聚合三个模式各自的 `missedRelevantChunkIds`，按 `missedCount` 降序、`chunkId` 升序输出 `mostMissedRelevantChunks`（单模式 summary 已在 Task 1 计算）。
+4. 对每个 sample 生成三个模式的诊断快照。`uniqueCoveredRelevantChunkIds` 是该模式命中但其他两个模式都未命中的相关 ID；`uniqueMissedRelevantChunkIds` 是该模式遗漏且至少一个其他模式命中的相关 ID；两个数组均按数据集 `relevantChunks` 原始顺序输出。
+5. 推荐关注模式只比较正式逐查询指标，不把 latency 或失败分类偷偷混入评分：
 
 ```ts
 const FOCUS_ORDER: readonly FailureAnalysisMode[] = ['vector', 'fulltext', 'hybrid']
@@ -387,7 +378,7 @@ function compareFocus(left: QueryFailureAnalysis, right: QueryFailureAnalysis): 
 }
 ```
 
-5. `priorityFailures` 按 nDCG 升序、Recall 升序、误召回数降序、sample ID 升序，输出每条查询最需要人工关注的推荐模式和对应指标。
+6. `priorityFailures` 按 nDCG 升序、Recall 升序、误召回数降序、sample ID 升序，输出每条查询最需要人工关注的推荐模式和对应指标。
 
 - [ ] **Step 4: 完善输入拒绝测试**
 
