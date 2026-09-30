@@ -164,6 +164,9 @@ export function useWorkflowRunner({ appId, nodes, edges }: UseWorkflowRunnerOpti
                 }))
             }
         },
+        // handleSSEEvent is a stable callback declared below; including it here
+        // would require moving the event reducer away from the execution flow.
+        // eslint-disable-next-line react-hooks/exhaustive-deps
         [appId, nodes, edges]
     )
 

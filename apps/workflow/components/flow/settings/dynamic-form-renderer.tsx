@@ -1,6 +1,6 @@
 'use client'
 
-import { useMemo } from 'react'
+import { createElement } from 'react'
 
 import { nodeSettingsRegistry } from './registry'
 import { FlowContext, NodeKind } from './types'
@@ -16,9 +16,7 @@ interface DynamicFormRendererProps {
  * 各表单组件内部已实现自动保存
  */
 export function DynamicFormRenderer({ node, onSave, flowContext }: DynamicFormRendererProps) {
-    const FormComponent = useMemo(() => {
-        return node.type ? nodeSettingsRegistry.getFormComponent(node.type as NodeKind) : null
-    }, [node.type])
+    const FormComponent = node.type ? nodeSettingsRegistry.getFormComponent(node.type as NodeKind) : null
 
     if (!FormComponent) {
         return (
@@ -28,5 +26,5 @@ export function DynamicFormRenderer({ node, onSave, flowContext }: DynamicFormRe
         )
     }
 
-    return <FormComponent node={node} onSave={onSave} flowContext={flowContext} />
+    return createElement(FormComponent, { node, onSave, flowContext })
 }

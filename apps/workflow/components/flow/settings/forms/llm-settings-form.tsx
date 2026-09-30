@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useMemo } from 'react'
-import { Controller, useForm } from 'react-hook-form'
+import { Controller, useForm, useWatch } from 'react-hook-form'
 
 import { Field, FieldLabel } from '@/components/ui/field'
 import { Input } from '@/components/ui/input'
@@ -45,12 +45,11 @@ export function LLMSettingsForm({ node, onSave, onCancel, flowContext }: NodeSet
         formState: { errors },
         control,
         setValue,
-        watch,
     } = useForm<LLMNodeConfig>({
         defaultValues,
     })
 
-    const selectedModel = watch('model')
+    const selectedModel = useWatch({ control, name: 'model' })
     const { models, options, isLoading, error } = useOllamaModels(selectedModel)
 
     // 自动保存 - 使用 control 配合 useWatch，避免父组件重新渲染

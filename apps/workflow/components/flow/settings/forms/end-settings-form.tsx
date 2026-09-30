@@ -35,6 +35,8 @@ export interface EndNodeConfig {
     outputs: OutputParam[]
 }
 
+const EMPTY_OUTPUTS: OutputParam[] = []
+
 /**
  * 单个输出参数编辑卡片
  */
@@ -128,7 +130,7 @@ function OutputParamCard({
  * 结束节点设置表单
  */
 export function EndSettingsForm({ node, onSave, onCancel, flowContext }: NodeSettingsFormProps<EndNodeConfig>) {
-    const configOutputs = (node.data?.config as any)?.outputs || []
+    const configOutputs = (node.data?.config as any)?.outputs ?? EMPTY_OUTPUTS
     const [outputs, setOutputs] = useState<OutputParam[]>(configOutputs)
     const currentNodeIdRef = useRef(node.id)
 

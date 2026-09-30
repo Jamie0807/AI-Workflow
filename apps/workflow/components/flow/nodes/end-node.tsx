@@ -26,9 +26,11 @@ interface EndNodeConfig {
     outputs?: OutputParam[]
 }
 
+const EMPTY_OUTPUTS: OutputParam[] = []
+
 export function EndNode({ data, selected }: NodeProps) {
     const config = (data?.config as EndNodeConfig) || {}
-    const outputs = config.outputs || []
+    const outputs = config.outputs ?? EMPTY_OUTPUTS
     const label = (data?.label as string) || '结束'
     const { nodes: allNodes } = useFlowEditorContext()
 

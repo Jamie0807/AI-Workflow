@@ -210,7 +210,7 @@ function EditorInner({ appId, appName, initialNodes = [], initialEdges = [] }: F
                 setSelectedNode(updatedNode)
             }
         }
-    }, [nodes])
+    }, [nodes, selectedNode])
 
     // 保存工作流
     const saveWorkflow = useCallback(async () => {

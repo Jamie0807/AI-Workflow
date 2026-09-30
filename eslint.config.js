@@ -22,6 +22,21 @@ const ignores = [
     '**/next-env.d.ts',
 ]
 
+// These files intentionally export stable metadata, configuration, hooks, or
+// UI primitives alongside components as part of their public module API.
+const refreshExportExceptions = [
+    'apps/workflow/app/layout.tsx',
+    'apps/workflow/components/app-icon.tsx',
+    'apps/workflow/components/ui/badge.tsx',
+    'apps/workflow/components/ui/button-group.tsx',
+    'apps/workflow/components/ui/button.tsx',
+    'apps/workflow/components/ui/form.tsx',
+    'apps/workflow/components/ui/sidebar.tsx',
+    'apps/workflow/components/ui/toggle.tsx',
+    'apps/workflow/lib/contexts/app-context.tsx',
+    'apps/workflow/lib/contexts/knowledge-context.tsx',
+]
+
 const workflowConfig = {
     files: ['apps/workflow/**/*.{ts,tsx}'],
     languageOptions: {
@@ -69,6 +84,13 @@ const packagesConfig = {
     },
 }
 
+const refreshExportExceptionsConfig = {
+    files: refreshExportExceptions,
+    rules: {
+        'react-refresh/only-export-components': 'off',
+    },
+}
+
 module.exports = tseslint.config(
     {
         ignores,
@@ -87,6 +109,7 @@ module.exports = tseslint.config(
         },
     },
     workflowConfig,
+    refreshExportExceptionsConfig,
     apiServerConfig,
     packagesConfig
 )
