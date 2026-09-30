@@ -13,3 +13,20 @@ export type {
     CandidateSource,
     HumanRelevance,
 } from './annotation'
+export {
+    analyzeModeFailure,
+    analyzeRagFailure,
+    FAILURE_ANALYSIS_MODES,
+    validateFailureAnalysisInput,
+    validateModeFailureInput,
+} from './failure-analysis'
+export type {
+    CoverageStatus,
+    FailureAnalysisInput,
+    FailureAnalysisMode,
+    FailureAnalysisResult,
+    ModeFailureAnalysis,
+    ModeFailureSummary,
+    QueryFailureAnalysis,
+    QueryModeComparison,
+} from './failure-analysis'
