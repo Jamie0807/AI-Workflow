@@ -90,6 +90,7 @@ export interface FailureAnalysisResult {
 }
 
 const RANKING_METRICS: readonly (keyof RankingMetrics)[] = ['precisionAtK', 'recallAtK', 'mrrAtK', 'ndcgAtK']
+const FOCUS_ORDER: readonly FailureAnalysisMode[] = ['vector', 'fulltext', 'hybrid']
 
 function isFailureAnalysisMode(value: unknown): value is FailureAnalysisMode {
     return FAILURE_ANALYSIS_MODES.includes(value as FailureAnalysisMode)
@@ -204,6 +205,66 @@ export function validateModeFailureInput(dataset: EvaluationDataset, report: Eva
     for (const sample of dataset.samples) {
         if (!queriesBySampleId.has(sample.id)) {
             errors.push(`mode ${mode} is missing report query for sample ${sample.id}`)
+        }
+    }
+
+    return errors
+}
+
+function getReportQueryIds(report: EvaluationReport): string[] {
+    return report.queries.map(query => query.sampleId)
+}
+
+export function validateFailureAnalysisInput(input: FailureAnalysisInput): string[] {
+    const errors: string[] = []
+    const reportsByMode = new Map<FailureAnalysisMode, EvaluationReport>()
+    const modeCounts = new Map<string, number>()
+
+    for (const report of input.reports) {
+        errors.push(...validateModeFailureInput(input.dataset, report))
+
+        const mode = String(report.mode)
+        const count = (modeCounts.get(mode) ?? 0) + 1
+        modeCounts.set(mode, count)
+        if (count === 2) {
+            errors.push(`duplicate report for mode ${mode}`)
+        }
+
+        if (isFailureAnalysisMode(report.mode) && !reportsByMode.has(report.mode)) {
+            reportsByMode.set(report.mode, report)
+        }
+
+        const reportDatasetSha256 = report.metadata?.datasetSha256
+        if (reportDatasetSha256 !== undefined && reportDatasetSha256 !== input.datasetSha256) {
+            errors.push(`mode ${mode} dataset SHA ${reportDatasetSha256} does not match input dataset SHA ${input.datasetSha256}`)
+        }
+    }
+
+    for (const mode of FAILURE_ANALYSIS_MODES) {
+        if (!reportsByMode.has(mode)) {
+            errors.push(`missing report for mode ${mode}`)
+        }
+    }
+
+    const firstReport = input.reports[0]
+    if (firstReport !== undefined) {
+        const expectedTopK = firstReport.config.topK
+        const expectedQueryIds = getReportQueryIds(firstReport)
+
+        for (const report of input.reports) {
+            if (report.config.topK !== expectedTopK) {
+                errors.push(`mode ${String(report.mode)} topK ${report.config.topK} does not match topK ${expectedTopK}`)
+            }
+
+            const missingQueryIds = getSetDifference(expectedQueryIds, getReportQueryIds(report))
+            const unexpectedQueryIds = getSetDifference(getReportQueryIds(report), expectedQueryIds)
+            if (missingQueryIds.length > 0 || unexpectedQueryIds.length > 0) {
+                const details = [
+                    ...(missingQueryIds.length > 0 ? [`missing ${missingQueryIds.join(', ')}`] : []),
+                    ...(unexpectedQueryIds.length > 0 ? [`unexpected ${unexpectedQueryIds.join(', ')}`] : []),
+                ]
+                errors.push(`mode ${String(report.mode)} query ID set differs from mode ${String(firstReport.mode)}: ${details.join('; ')}`)
+            }
         }
     }
 
@@ -333,5 +394,152 @@ export function analyzeModeFailure(dataset: EvaluationDataset, report: Evaluatio
         latencyMs: { ...report.latencyMs },
         summary: createSummary(queries),
         queries,
+    }
+}
+
+function getRequiredReport(reports: readonly EvaluationReport[], mode: FailureAnalysisMode): EvaluationReport {
+    const report = reports.find(candidate => candidate.mode === mode)
+    if (report === undefined) {
+        throw new Error(`Invalid RAG failure analysis input: missing report for mode ${mode}`)
+    }
+
+    return report
+}
+
+function getRequiredQuery(analysis: ModeFailureAnalysis, sampleId: string): QueryFailureAnalysis {
+    const query = analysis.queries.find(candidate => candidate.sampleId === sampleId)
+    if (query === undefined) {
+        throw new Error(`Invalid RAG failure analysis result: missing query ${sampleId} for mode ${analysis.mode}`)
+    }
+
+    return query
+}
+
+function compareFocus(left: QueryFailureAnalysis, right: QueryFailureAnalysis): number {
+    return (
+        right.metrics.ndcgAtK - left.metrics.ndcgAtK ||
+        right.metrics.mrrAtK - left.metrics.mrrAtK ||
+        right.metrics.precisionAtK - left.metrics.precisionAtK ||
+        right.metrics.recallAtK - left.metrics.recallAtK
+    )
+}
+
+function getRecommendedFocusMode(queries: Record<FailureAnalysisMode, QueryFailureAnalysis>): FailureAnalysisMode {
+    let recommendedMode: FailureAnalysisMode = FOCUS_ORDER[0]
+
+    for (const mode of FOCUS_ORDER.slice(1)) {
+        if (compareFocus(queries[mode], queries[recommendedMode]) < 0) {
+            recommendedMode = mode
+        }
+    }
+
+    return recommendedMode
+}
+
+function createModeComparisonSnapshot(
+    query: QueryFailureAnalysis,
+    otherQueries: readonly QueryFailureAnalysis[],
+    relevantChunkIds: readonly string[]
+): QueryModeComparison['modes'][FailureAnalysisMode] {
+    const otherCoveredRelevantChunkIds = new Set(otherQueries.flatMap(otherQuery => otherQuery.coveredRelevantChunkIds))
+    const coveredRelevantChunkIds = new Set(query.coveredRelevantChunkIds)
+    const missedRelevantChunkIds = new Set(query.missedRelevantChunkIds)
+
+    return {
+        metrics: { ...query.metrics },
+        latencyMs: query.latencyMs,
+        coveredRelevantChunkIds: [...query.coveredRelevantChunkIds],
+        missedRelevantChunkIds: [...query.missedRelevantChunkIds],
+        uniqueCoveredRelevantChunkIds: relevantChunkIds.filter(
+            chunkId => coveredRelevantChunkIds.has(chunkId) && !otherCoveredRelevantChunkIds.has(chunkId)
+        ),
+        uniqueMissedRelevantChunkIds: relevantChunkIds.filter(
+            chunkId => missedRelevantChunkIds.has(chunkId) && otherCoveredRelevantChunkIds.has(chunkId)
+        ),
+    }
+}
+
+function compareSampleIds(left: string, right: string): number {
+    return left < right ? -1 : left > right ? 1 : 0
+}
+
+export function analyzeRagFailure(input: FailureAnalysisInput): FailureAnalysisResult {
+    const errors = validateFailureAnalysisInput(input)
+    if (errors.length > 0) {
+        throw new Error(`Invalid RAG failure analysis input:\n${errors.join('\n')}`)
+    }
+
+    const vector = analyzeModeFailure(input.dataset, getRequiredReport(input.reports, 'vector'))
+    const fulltext = analyzeModeFailure(input.dataset, getRequiredReport(input.reports, 'fulltext'))
+    const hybrid = analyzeModeFailure(input.dataset, getRequiredReport(input.reports, 'hybrid'))
+    const byMode: Record<FailureAnalysisMode, ModeFailureAnalysis> = { vector, fulltext, hybrid }
+
+    const queryComparisons = input.dataset.samples.map(sample => {
+        const queries: Record<FailureAnalysisMode, QueryFailureAnalysis> = {
+            vector: getRequiredQuery(vector, sample.id),
+            fulltext: getRequiredQuery(fulltext, sample.id),
+            hybrid: getRequiredQuery(hybrid, sample.id),
+        }
+
+        const modes: QueryModeComparison['modes'] = {
+            vector: createModeComparisonSnapshot(
+                queries.vector,
+                [queries.fulltext, queries.hybrid],
+                sample.relevantChunks.map(chunk => chunk.chunkId)
+            ),
+            fulltext: createModeComparisonSnapshot(
+                queries.fulltext,
+                [queries.vector, queries.hybrid],
+                sample.relevantChunks.map(chunk => chunk.chunkId)
+            ),
+            hybrid: createModeComparisonSnapshot(
+                queries.hybrid,
+                [queries.vector, queries.fulltext],
+                sample.relevantChunks.map(chunk => chunk.chunkId)
+            ),
+        }
+
+        return {
+            sampleId: sample.id,
+            modes,
+            recommendedFocusMode: getRecommendedFocusMode(queries),
+        }
+    })
+
+    const priorityFailures = queryComparisons
+        .map(comparison => {
+            const query = getRequiredQuery(byMode[comparison.recommendedFocusMode], comparison.sampleId)
+            const sample = input.dataset.samples.find(candidate => candidate.id === comparison.sampleId)
+            if (sample === undefined) {
+                throw new Error(`Invalid RAG failure analysis result: missing dataset sample ${comparison.sampleId}`)
+            }
+
+            return {
+                sampleId: comparison.sampleId,
+                query: sample.query,
+                recommendedFocusMode: comparison.recommendedFocusMode,
+                nDCG: query.metrics.ndcgAtK,
+                recall: query.metrics.recallAtK,
+                falsePositiveCount: query.falsePositiveChunkIds.length,
+            }
+        })
+        .sort(
+            (left, right) =>
+                left.nDCG - right.nDCG ||
+                left.recall - right.recall ||
+                right.falsePositiveCount - left.falsePositiveCount ||
+                compareSampleIds(left.sampleId, right.sampleId)
+        )
+
+    return {
+        generatedAt: input.generatedAt,
+        gitRevision: input.gitRevision,
+        dataset: { path: input.datasetPath, sha256: input.datasetSha256, sampleCount: input.dataset.samples.length },
+        baseline: { path: input.reportPath },
+        modes: [...FAILURE_ANALYSIS_MODES],
+        topK: vector.topK,
+        byMode,
+        queryComparisons,
+        priorityFailures,
     }
 }
