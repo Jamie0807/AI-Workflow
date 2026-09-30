@@ -3,7 +3,8 @@
 import { describe, expect, it } from 'vitest'
 
 import type { FailureAnalysisInput } from '../failure-analysis'
-import { analyzeModeFailure, analyzeRagFailure, validateFailureAnalysisInput, validateModeFailureInput } from '../failure-analysis'
+import { analyzeModeFailure, validateModeFailureInput } from '../failure-analysis'
+import { analyzeRagFailure, validateFailureAnalysisInput } from '../index'
 import type { EvaluationDataset, EvaluationReport, RankingMetrics } from '../types'
 
 const dataset: EvaluationDataset = {
@@ -198,6 +199,50 @@ function createInputWithEqualMetrics(): FailureAnalysisInput {
     }
 }
 
+function createInputForPriorityTieBreaks(): FailureAnalysisInput {
+    const input = createInputWithThreeQueries()
+    const additionalSample: EvaluationDataset['samples'][number] = {
+        id: 'q-4',
+        query: 'tie',
+        knowledgeBaseId: 'kb-1',
+        relevantChunks: [{ chunkId: 'core-4', relevance: 3 }],
+    }
+    const priorityDefinitions = new Map([
+        ['q-1', { retrievedChunkIds: ['noise'], recall: 0.4 }],
+        ['q-2', { retrievedChunkIds: ['noise', 'noise-2'], recall: 0.5 }],
+        ['q-3', { retrievedChunkIds: ['noise'], recall: 0.5 }],
+        ['q-4', { retrievedChunkIds: ['noise'], recall: 0.5 }],
+    ])
+
+    return {
+        ...input,
+        dataset: { ...input.dataset, samples: [...input.dataset.samples, additionalSample] },
+        reports: input.reports.map(report => ({
+            ...report,
+            sampleCount: 4,
+            queries: [
+                ...report.queries.map(query => {
+                    const definition = priorityDefinitions.get(query.sampleId)!
+                    return {
+                        ...query,
+                        retrievedChunkIds: [...definition.retrievedChunkIds],
+                        retrievedResults: definition.retrievedChunkIds.map((chunkId, index) => ({ chunkId, score: 1 - index / 10 })),
+                        metrics: { precisionAtK: 0, recallAtK: definition.recall, mrrAtK: 0, ndcgAtK: 0.2 },
+                    }
+                }),
+                {
+                    sampleId: 'q-4',
+                    query: 'tie',
+                    retrievedChunkIds: ['noise'],
+                    retrievedResults: [{ chunkId: 'noise', score: 1 }],
+                    metrics: { precisionAtK: 0, recallAtK: 0.5, mrrAtK: 0, ndcgAtK: 0.2 },
+                    latencyMs: 12,
+                },
+            ],
+        })),
+    }
+}
+
 it('classifies coverage and preserves the relevance-level distinctions', () => {
     const vector = analyzeModeFailure(dataset, report('vector', ['core-3', 'core-2', 'background-1']))
     const fulltext = analyzeModeFailure(dataset, report('fulltext', ['background-1', 'noise']))
@@ -285,6 +330,12 @@ it('uses vector, fulltext, hybrid as the final tie-break order', () => {
     expect(result.queryComparisons[0]?.recommendedFocusMode).toBe('vector')
 })
 
+it('orders priority failures by recall, false positives, then sample ID', () => {
+    const result = analyzeRagFailure(createInputForPriorityTieBreaks())
+
+    expect(result.priorityFailures.map(item => item.sampleId)).toEqual(['q-1', 'q-2', 'q-3', 'q-4'])
+})
+
 describe('validateModeFailureInput', () => {
     it('rejects mismatched mode fields', () => {
         const invalidReport = report('vector', ['noise'])
@@ -361,6 +412,30 @@ describe('validateFailureAnalysisInput', () => {
                     report.metadata === undefined ? report : { ...report, metadata: { ...report.metadata, datasetSha256: 'other-sha' } }
                 ),
             }),
+            'mode vector dataset SHA',
+        ],
+        [
+            'missing metadata',
+            (input: FailureAnalysisInput) => ({
+                ...input,
+                reports: input.reports.map(report => (report.mode === 'vector' ? { ...report, metadata: undefined } : report)),
+            }),
+            'mode vector metadata is required for dataset SHA validation',
+        ],
+        [
+            'missing dataset SHA',
+            (input: FailureAnalysisInput) => ({
+                ...input,
+                reports: input.reports.map(report =>
+                    report.mode === 'fulltext'
+                        ? {
+                              ...report,
+                              metadata: { ...report.metadata, datasetSha256: undefined } as unknown as EvaluationReport['metadata'],
+                          }
+                        : report
+                ),
+            }),
+            'mode fulltext metadata.datasetSha256 is required for dataset SHA validation',
         ],
         [
             'missing query',
@@ -371,6 +446,7 @@ describe('validateFailureAnalysisInput', () => {
                     queries: report.queries.filter(query => query.sampleId !== 'q-2'),
                 })),
             }),
+            'sample q-2',
         ],
         [
             'topK mismatch',
@@ -380,6 +456,7 @@ describe('validateFailureAnalysisInput', () => {
                     index === 1 ? { ...report, config: { ...report.config, topK: 10 } } : report
                 ),
             }),
+            'mode fulltext topK 10',
         ],
         [
             'duplicate retrieved chunk',
@@ -392,9 +469,12 @@ describe('validateFailureAnalysisInput', () => {
                     ),
                 })),
             }),
+            'mode vector sample q-1 has duplicate retrieved chunk ID core-3',
         ],
-    ] as const)('rejects %s', (_label, mutate) => {
-        expect(validateFailureAnalysisInput(mutate(createInputWithThreeQueries()))).not.toEqual([])
+    ] as const)('rejects %s with a localized error', (_label, mutate, expectedLocation) => {
+        const errors = validateFailureAnalysisInput(mutate(createInputWithThreeQueries()))
+
+        expect(errors).toEqual(expect.arrayContaining([expect.stringContaining(expectedLocation)]))
     })
 
     it('rejects missing and duplicate modes', () => {

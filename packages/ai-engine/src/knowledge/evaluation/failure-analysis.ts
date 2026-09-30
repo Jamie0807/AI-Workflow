@@ -234,8 +234,12 @@ export function validateFailureAnalysisInput(input: FailureAnalysisInput): strin
             reportsByMode.set(report.mode, report)
         }
 
-        const reportDatasetSha256 = report.metadata?.datasetSha256
-        if (reportDatasetSha256 !== undefined && reportDatasetSha256 !== input.datasetSha256) {
+        if (report.metadata === undefined) {
+            errors.push(`mode ${mode} metadata is required for dataset SHA validation`)
+        } else if (report.metadata.datasetSha256 === undefined) {
+            errors.push(`mode ${mode} metadata.datasetSha256 is required for dataset SHA validation`)
+        } else if (report.metadata.datasetSha256 !== input.datasetSha256) {
+            const reportDatasetSha256 = report.metadata.datasetSha256
             errors.push(`mode ${mode} dataset SHA ${reportDatasetSha256} does not match input dataset SHA ${input.datasetSha256}`)
         }
     }
