@@ -216,7 +216,8 @@ function createInputForPriorityTieBreaks(): FailureAnalysisInput {
 
     return {
         ...input,
-        dataset: { ...input.dataset, samples: [...input.dataset.samples, additionalSample] },
+        // Deliberately reverse the source order so the expected priority order cannot pass by input order alone.
+        dataset: { ...input.dataset, samples: [additionalSample, ...[...input.dataset.samples].reverse()] },
         reports: input.reports.map(report => ({
             ...report,
             sampleCount: 4,
@@ -238,7 +239,7 @@ function createInputForPriorityTieBreaks(): FailureAnalysisInput {
                     metrics: { precisionAtK: 0, recallAtK: 0.5, mrrAtK: 0, ndcgAtK: 0.2 },
                     latencyMs: 12,
                 },
-            ],
+            ].reverse(),
         })),
     }
 }
@@ -330,10 +331,43 @@ it('uses vector, fulltext, hybrid as the final tie-break order', () => {
     expect(result.queryComparisons[0]?.recommendedFocusMode).toBe('vector')
 })
 
-it('orders priority failures by recall, false positives, then sample ID', () => {
-    const result = analyzeRagFailure(createInputForPriorityTieBreaks())
+it('orders priority failures by nDCG, recall, false positives, and sample ID regardless of input order', () => {
+    const input = createInputForPriorityTieBreaks()
+    const expectedPriorityOrder = ['q-1', 'q-2', 'q-3', 'q-4']
+    const reversedInputOrder = [...expectedPriorityOrder].reverse()
 
-    expect(result.priorityFailures.map(item => item.sampleId)).toEqual(['q-1', 'q-2', 'q-3', 'q-4'])
+    expect(input.dataset.samples.map(sample => sample.id)).toEqual(reversedInputOrder)
+    expect(input.reports.map(report => report.queries.map(query => query.sampleId))).toEqual([
+        reversedInputOrder,
+        reversedInputOrder,
+        reversedInputOrder,
+    ])
+
+    const result = analyzeRagFailure(input)
+    const priorityFailures = result.priorityFailures
+
+    expect(priorityFailures.every(item => item.nDCG === 0.2)).toBe(true)
+    expect(priorityFailures.map(item => item.recall)).toEqual([0.4, 0.5, 0.5, 0.5])
+    expect(priorityFailures.slice(1, 2).map(item => item.falsePositiveCount)).toEqual([2])
+    expect(priorityFailures.slice(2).map(item => [item.recall, item.falsePositiveCount])).toEqual([
+        [0.5, 1],
+        [0.5, 1],
+    ])
+    expect(priorityFailures.map(item => item.sampleId)).toEqual(expectedPriorityOrder)
+
+    expect(
+        priorityFailures.map(item => ({
+            sampleId: item.sampleId,
+            nDCG: item.nDCG,
+            recall: item.recall,
+            falsePositiveCount: item.falsePositiveCount,
+        }))
+    ).toEqual([
+        { sampleId: 'q-1', nDCG: 0.2, recall: 0.4, falsePositiveCount: 1 },
+        { sampleId: 'q-2', nDCG: 0.2, recall: 0.5, falsePositiveCount: 2 },
+        { sampleId: 'q-3', nDCG: 0.2, recall: 0.5, falsePositiveCount: 1 },
+        { sampleId: 'q-4', nDCG: 0.2, recall: 0.5, falsePositiveCount: 1 },
+    ])
 })
 
 describe('validateModeFailureInput', () => {
