@@ -2,7 +2,7 @@
 
 import { execFileSync } from 'node:child_process'
 import { createHash } from 'node:crypto'
-import { mkdir, mkdtemp, readdir, readFile, rename as fsRename, rm, writeFile } from 'node:fs/promises'
+import { mkdir, mkdtemp, readdir, readFile, rename as fsRename, rm, unlink as fsUnlink, writeFile } from 'node:fs/promises'
 import { join, relative } from 'node:path'
 
 import { describe, expect, it, vi } from 'vitest'
@@ -435,6 +435,71 @@ describe('analyze:rag CLI', () => {
                 'prometheus-global-guardian-v1.failure-analysis.json',
                 'prometheus-global-guardian-v1.failure-analysis.md',
             ])
+        })
+    })
+
+    it('reports the publication and restore errors while preserving a backup when JSON restore fails', async () => {
+        await withFixture(async fixture => {
+            await mkdir(fixture.outputDir, { recursive: true })
+            const jsonPath = join(fixture.outputDir, 'prometheus-global-guardian-v1.failure-analysis.json')
+            const markdownPath = join(fixture.outputDir, 'prometheus-global-guardian-v1.failure-analysis.md')
+            await writeFile(jsonPath, 'old-json\n', 'utf8')
+            await writeFile(markdownPath, 'old-markdown\n', 'utf8')
+
+            const failingRename = async (source: string, target: string): Promise<void> => {
+                if (source.endsWith('.tmp') && target === markdownPath) {
+                    throw new Error('simulated second publication rename failure')
+                }
+                if (source.endsWith('.bak') && target === jsonPath) {
+                    throw new Error('simulated JSON restore rename failure')
+                }
+                await fsRename(source, target)
+            }
+
+            const rejection = await writeFailureAnalysisReports(fixture.outputDir, fixture.result, { rename: failingRename }).catch(
+                (error: unknown) => error
+            )
+
+            expect(rejection).toBeInstanceOf(Error)
+            const message = rejection instanceof Error ? rejection.message : String(rejection)
+            expect(message).toContain('simulated second publication rename failure')
+            expect(message).toContain('simulated JSON restore rename failure')
+
+            const files = (await readdir(fixture.outputDir)).sort()
+            const jsonBackup = files.find(
+                file => file.startsWith('prometheus-global-guardian-v1.failure-analysis.json.') && file.endsWith('.bak')
+            )
+            expect(jsonBackup).toBeDefined()
+            expect(await readFile(join(fixture.outputDir, jsonBackup!), 'utf8')).toBe('old-json\n')
+            expect(await readFile(markdownPath, 'utf8')).toBe('old-markdown\n')
+        })
+    })
+
+    it('rejects when successful publication cleanup fails instead of returning success', async () => {
+        await withFixture(async fixture => {
+            await mkdir(fixture.outputDir, { recursive: true })
+            const jsonPath = join(fixture.outputDir, 'prometheus-global-guardian-v1.failure-analysis.json')
+            const markdownPath = join(fixture.outputDir, 'prometheus-global-guardian-v1.failure-analysis.md')
+            await writeFile(jsonPath, 'old-json\n', 'utf8')
+            await writeFile(markdownPath, 'old-markdown\n', 'utf8')
+
+            const failingUnlink = async (path: string): Promise<void> => {
+                if (path.includes('.failure-analysis.json.') && path.endsWith('.bak')) {
+                    throw new Error('simulated JSON backup cleanup failure')
+                }
+                await fsUnlink(path)
+            }
+
+            await expect(writeFailureAnalysisReports(fixture.outputDir, fixture.result, { unlink: failingUnlink })).rejects.toThrow(
+                'simulated JSON backup cleanup failure'
+            )
+
+            const files = (await readdir(fixture.outputDir)).sort()
+            expect(files).toContain('prometheus-global-guardian-v1.failure-analysis.json')
+            expect(files).toContain('prometheus-global-guardian-v1.failure-analysis.md')
+            expect(
+                files.some(file => file.startsWith('prometheus-global-guardian-v1.failure-analysis.json.') && file.endsWith('.bak'))
+            ).toBe(true)
         })
     })
 

@@ -441,7 +441,13 @@ export async function writeFailureAnalysisReports(
 
     const isMissingFileError = (error: unknown): boolean => isRecord(error) && error.code === 'ENOENT'
     const cleanup = async (path: string): Promise<void> => {
-        await remove(path).catch(() => undefined)
+        try {
+            await remove(path)
+        } catch (error) {
+            if (!isMissingFileError(error)) {
+                throw error
+            }
+        }
     }
     const backupExistingTarget = async (target: string, backup: string): Promise<void> => {
         try {
@@ -464,23 +470,49 @@ export async function writeFailureAnalysisReports(
         await move(markdownTempPath, markdownPath)
         publishedTargets.push(markdownPath)
     } catch (error) {
+        const rollbackErrors: unknown[] = []
         for (const target of publishedTargets.reverse()) {
-            await cleanup(target)
+            try {
+                await cleanup(target)
+            } catch (cleanupError) {
+                rollbackErrors.push(cleanupError)
+            }
         }
         for (const { target, backup } of backups.reverse()) {
-            await move(backup, target).catch(() => undefined)
+            try {
+                await move(backup, target)
+            } catch (restoreError) {
+                rollbackErrors.push(restoreError)
+            }
         }
-        await cleanup(jsonTempPath)
-        await cleanup(markdownTempPath)
-        await cleanup(jsonBackupPath)
-        await cleanup(markdownBackupPath)
+        for (const temporaryPath of [jsonTempPath, markdownTempPath]) {
+            try {
+                await cleanup(temporaryPath)
+            } catch (cleanupError) {
+                rollbackErrors.push(cleanupError)
+            }
+        }
+        if (rollbackErrors.length > 0) {
+            throw new Error(
+                `Failed to publish failure analysis reports: ${errorMessage(error)}; rollback failed: ${rollbackErrors
+                    .map(errorMessage)
+                    .join('; ')}`
+            )
+        }
         throw error
     }
 
-    await cleanup(jsonTempPath)
-    await cleanup(markdownTempPath)
-    await cleanup(jsonBackupPath)
-    await cleanup(markdownBackupPath)
+    const cleanupErrors: unknown[] = []
+    for (const path of [jsonTempPath, markdownTempPath, jsonBackupPath, markdownBackupPath]) {
+        try {
+            await cleanup(path)
+        } catch (cleanupError) {
+            cleanupErrors.push(cleanupError)
+        }
+    }
+    if (cleanupErrors.length > 0) {
+        throw new Error(`Failure analysis reports published, but cleanup failed: ${cleanupErrors.map(errorMessage).join('; ')}`)
+    }
 
     return { jsonPath, markdownPath }
 }
